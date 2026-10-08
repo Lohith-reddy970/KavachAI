@@ -24,7 +24,7 @@ def test_deterministic_demo_unchanged(client):
     assert run["deliverables"]
 
 
-def test_mock_provider_is_default():
+def test_mock_provider_is_selected_for_tests():
     assert get_provider().name == "mock-local"
     assert config.IS_AIRGAPPED
 

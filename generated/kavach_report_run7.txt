@@ -1,0 +1,30 @@
+KAVACH AI - Document Analysis Report
+Source document: plant_pid.png
+Generated: 2026-10-08T19:21:44.430640+00:00 | Mode: airgapped
+Run ID: 7
+Profile: General documents | Analysis: Risk review
+
+LOCAL ANALYSIS OUTPUT - REVIEW BEFORE OPERATIONAL USE
+================================================================
+
+1. EXECUTIVE SUMMARY
+   Verification score: 0.0%
+   Evidence-backed: 0/0
+   Model routing: llama3.2:3b (code)
+
+2. FINDINGS
+3. VERIFICATION
+   Score: 0.0% | Evidence-backed: 0/0
+   Findings flagged for review: none
+
+4. PIPELINE TRACE
+   - [security_agent] Security perimeter verified
+   - [router_agent] Task routed to llama3.2:3b
+   - [router_agent] Execution plan created
+   - [document_agent] Uploaded document loaded
+   - [document_agent] No text extracted
+   - [vision_agent] Uploaded image analysis completed
+   - [knowledge_agent] Knowledge retrieved
+   - [reasoning_agent] Reasoning analysis captured
+   - [reasoning_agent] Profile-based risk review completed
+   - [verification_agent] Evidence cross-check completed

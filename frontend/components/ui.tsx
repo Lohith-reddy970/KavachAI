@@ -31,7 +31,7 @@ export function PanelHeader({
       <div className="flex items-center gap-2.5">
         {icon ? <span className="text-signal">{icon}</span> : null}
         <div>
-          <h3 className="font-display text-sm font-semibold tracking-wide text-ink">{title}</h3>
+          <h3 className="font-display text-base font-semibold uppercase tracking-[0.06em] text-ink">{title}</h3>
           {sub ? <p className="text-2xs text-ink-muted">{sub}</p> : null}
         </div>
       </div>
@@ -53,8 +53,8 @@ export function PageTitle({
   return (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <p className="eyebrow mb-1">{eyebrow}</p>
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-ink">{title}</h1>
+        <p className="eyebrow mb-1 text-signal">{eyebrow}</p>
+        <h1 className="font-display text-3xl font-semibold uppercase leading-none tracking-[0.035em] text-ink sm:text-4xl">{title}</h1>
       </div>
       {children}
     </div>
@@ -133,7 +133,7 @@ export function Meter({
   );
 }
 
-/** Indicates whether a panel is showing live backend data or the local demo set. */
+/** Indicates whether a panel is showing live backend data or bundled sample data. */
 export function SourceChip({ source }: { source: "mock" | "live" }) {
   return source === "live" ? (
     <StatusPill tone="verified" pulse>
@@ -141,7 +141,7 @@ export function SourceChip({ source }: { source: "mock" | "live" }) {
     </StatusPill>
   ) : (
     <StatusPill tone="info" dot={false}>
-      Local Demo Data
+      Bundled Sample Data
     </StatusPill>
   );
 }

@@ -13,18 +13,18 @@ from ..database import db
 from . import scenario
 
 MODELS = [
-    {"name": "Qwen3-4B", "provider": "mock-local", "kind": "reasoning",
-     "status": "online", "params": "4B", "vram_gb": 6.5,
-     "routing_rule": "Default for reasoning/text analysis and report synthesis."},
-    {"name": "Vision Model", "provider": "mock-local", "kind": "vision",
-     "status": "online", "params": "7B-VL", "vram_gb": 9.0,
-     "routing_rule": "Images, P&ID schematics, OCR and region detection."},
-    {"name": "Code Model", "provider": "mock-local", "kind": "code",
-     "status": "online", "params": "3B", "vram_gb": 5.0,
-     "routing_rule": "Source-code review and vulnerability scanning."},
-    {"name": "Small Fast Model", "provider": "mock-local", "kind": "classification",
-     "status": "online", "params": "0.5B", "vram_gb": 1.2,
-     "routing_rule": "Fast classification, triage and lightweight extraction."},
+    {"name": config.OLLAMA_REASONING_MODEL, "provider": "ollama", "kind": "reasoning",
+     "status": "configured", "params": "8.2B · Q4_K_M",
+     "routing_rule": "General reasoning and evidence synthesis."},
+    {"name": config.OLLAMA_VISION_MODEL, "provider": "ollama", "kind": "vision",
+     "status": "configured", "params": "7B · Q4_0",
+     "routing_rule": "P&ID and image analysis."},
+    {"name": config.OLLAMA_OTHER_MODEL, "provider": "ollama", "kind": "other",
+     "status": "configured", "params": "3.2B · Q4_K_M",
+     "routing_rule": "Code, classification, extraction, and planner choices."},
+    {"name": config.OLLAMA_EMBED_MODEL, "provider": "ollama", "kind": "embedding",
+     "status": "configured", "params": "137M · F16 · 768d",
+     "routing_rule": "Local knowledge-base embeddings."},
 ]
 
 
@@ -33,8 +33,9 @@ def _now() -> str:
 
 
 def seed_models() -> None:
-    if db.count("models") > 0:
-        return
+    # This is a configuration-derived catalog, so refresh it at startup to pick
+    # up changed local model tags rather than leaving the old demo placeholders.
+    db.execute("DELETE FROM models")
     for m in MODELS:
         db.insert("models", m)
 

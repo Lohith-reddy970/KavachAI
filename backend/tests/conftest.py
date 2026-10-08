@@ -11,7 +11,11 @@ os.environ["KAVACH_DB"] = str(_TMP / "kavach.db")
 os.environ["KAVACH_GENERATED"] = str(_TMP / "generated")
 os.environ["KAVACH_UPLOADS"] = str(_TMP / "uploads")
 os.environ["KAVACH_MODE"] = "airgapped"
-os.environ.pop("KAVACH_INFERENCE_PROVIDER", None)
+os.environ["KAVACH_INFERENCE_PROVIDER"] = "mock"
+os.environ["OLLAMA_REASONING_MODEL"] = "qwen3:8b"
+os.environ["OLLAMA_VISION_MODEL"] = "llava:7b"
+os.environ["OLLAMA_OTHER_MODEL"] = "llama3.2:3b"
+os.environ["OLLAMA_EMBED_MODEL"] = "nomic-embed-text:latest"
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 

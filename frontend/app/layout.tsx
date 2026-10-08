@@ -1,32 +1,33 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { Barlow, Barlow_Condensed, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "./layout-shell";
 
 // Fonts are downloaded and self-hosted into the build, so the running app
 // makes NO external font requests — consistent with air-gapped operation.
-const display = Space_Grotesk({
+const display = Barlow_Condensed({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["400", "500", "600", "700"],
+  weight: ["500", "600", "700"],
   display: "swap",
 });
-const sans = Inter({
+const sans = Barlow({
   subsets: ["latin"],
   variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
-const mono = JetBrains_Mono({
+const mono = IBM_Plex_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "KAVACH AI — Sovereign AI Workbench",
+  title: "KAVACH AI — Local Document Intelligence",
   description:
-    "Sovereign Intelligence. Secured On-Premise. An air-gapped agentic AI workbench for confidential industrial work.",
+    "A local-first document intelligence workbench for private, evidence-based analysis and review.",
 };
 
 export const viewport: Viewport = {

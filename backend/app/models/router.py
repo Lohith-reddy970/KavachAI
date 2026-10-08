@@ -6,22 +6,23 @@ keyword-driven and fully deterministic (no ML at inference time) so demos are
 reproducible.
 
 Model catalog:
-    * Qwen3-4B            - general reasoning / text
-    * Vision Model        - images, P&ID, schematics, OCR regions
-    * Code Model          - source code analysis
-    * Small Fast Model    - classification / lightweight extraction
+    * qwen3:8b            - general reasoning / evidence synthesis
+    * llava:7b            - image and P&ID visual analysis
+    * llama3.2:3b         - code, classification, extraction, and other text tasks
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .. import config
+
 # task_type -> model name
 _TYPE_TO_MODEL = {
-    "vision": "Vision Model",
-    "code": "Code Model",
-    "classification": "Small Fast Model",
-    "extraction": "Small Fast Model",
-    "reasoning": "Qwen3-4B",
+    "vision": config.OLLAMA_VISION_MODEL,
+    "code": config.OLLAMA_OTHER_MODEL,
+    "classification": config.OLLAMA_OTHER_MODEL,
+    "extraction": config.OLLAMA_OTHER_MODEL,
+    "reasoning": config.OLLAMA_REASONING_MODEL,
 }
 
 # Keyword signals for classification (checked in priority order).
@@ -57,13 +58,13 @@ def classify(task_text: str) -> str:
 def route(task_text: str) -> RoutingDecision:
     """Classify the task and select the target model with a reason string."""
     task_type = classify(task_text)
-    model = _TYPE_TO_MODEL.get(task_type, "Qwen3-4B")
+    model = _TYPE_TO_MODEL.get(task_type, config.OLLAMA_REASONING_MODEL)
     reasons = {
-        "vision": "Detected visual/P&ID content; routing to the multimodal Vision Model.",
-        "code": "Detected source-code analysis intent; routing to the Code Model.",
-        "extraction": "Detected structured extraction intent; routing to the Small Fast Model.",
-        "classification": "Detected classification/triage intent; routing to the Small Fast Model.",
-        "reasoning": "General analytical task; routing to Qwen3-4B for reasoning.",
+        "vision": f"Detected visual/P&ID content; routing to {config.OLLAMA_VISION_MODEL}.",
+        "code": f"Detected source-code intent; routing to {config.OLLAMA_OTHER_MODEL}.",
+        "extraction": f"Detected structured extraction; routing to {config.OLLAMA_OTHER_MODEL}.",
+        "classification": f"Detected classification/triage; routing to {config.OLLAMA_OTHER_MODEL}.",
+        "reasoning": f"General analytical task; routing to {config.OLLAMA_REASONING_MODEL}.",
     }
     # Deterministic confidence banding by type.
     confidence = {
@@ -79,16 +80,16 @@ def route(task_text: str) -> RoutingDecision:
 
 
 def routing_rules() -> list[dict]:
-    """Static description of routing rules for the /api/models endpoint."""
+    """Describe the configured local model routing for the /api/models endpoint."""
     return [
-        {"task_type": "reasoning", "model": "Qwen3-4B",
+        {"task_type": "reasoning", "model": config.OLLAMA_REASONING_MODEL,
          "when": "General text analysis, findings, report reasoning"},
-        {"task_type": "vision", "model": "Vision Model",
-         "when": "Images, P&ID schematics, OCR, region detection"},
-        {"task_type": "code", "model": "Code Model",
+        {"task_type": "vision", "model": config.OLLAMA_VISION_MODEL,
+         "when": "Images and P&ID visual analysis"},
+        {"task_type": "code", "model": config.OLLAMA_OTHER_MODEL,
          "when": "Source-code review and vulnerability scanning"},
-        {"task_type": "extraction", "model": "Small Fast Model",
+        {"task_type": "extraction", "model": config.OLLAMA_OTHER_MODEL,
          "when": "Field/table extraction from documents"},
-        {"task_type": "classification", "model": "Small Fast Model",
+        {"task_type": "classification", "model": config.OLLAMA_OTHER_MODEL,
          "when": "Fast classification and task triage"},
     ]

@@ -10,6 +10,7 @@ pydantic>=2.6
 # Pure-python-ish and pip-installable offline-friendly:
 fpdf2>=2.7          # PDF generation (demo data + deliverables)
 Pillow>=10.0        # P&ID PNG generation
+psutil>=5.9         # live CPU/RAM readings for /api/system/status
 
 # Optional richer deliverables (guarded):
 python-docx>=1.1    # .docx reports

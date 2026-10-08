@@ -18,6 +18,9 @@ services:
     container_name: kavach-backend
     environment:
       KAVACH_MODE: airgapped
+      # Ollama is not part of this Compose stack; local model inference is used
+      # when running the backend directly on the host.
+      KAVACH_INFERENCE_PROVIDER: mock
     ports:
       - "8000:8000"
     volumes:

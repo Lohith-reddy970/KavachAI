@@ -82,7 +82,7 @@ export default function RouterPage() {
             <div className="flex items-stretch gap-2">
               <FlowNode label="Task" value={rule.taskType} tone="ink" />
               <Arrow />
-              <FlowNode label="Classifier" value="Phi-3-mini" tone="info" />
+              <FlowNode label="Classifier" value="llama3.2:3b" tone="info" />
               <Arrow />
               <FlowNode label="Router" value="policy match" tone="signal" />
             </div>
@@ -147,7 +147,7 @@ export default function RouterPage() {
                     </StatusPill>
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-3">
-                    <MiniStat label="VRAM" value={`${m.vramGb} GB`} />
+                    <MiniStat label="Model Size" value={`${m.sizeGb} GB`} />
                     <MiniStat label="Context" value={m.ctx} />
                     <MiniStat label="Throughput" value={m.tokensPerSec ? `${m.tokensPerSec} t/s` : "—"} />
                   </div>

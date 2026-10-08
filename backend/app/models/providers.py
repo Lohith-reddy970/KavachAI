@@ -2,11 +2,11 @@
 
 Defines a clean ``BaseModelProvider`` interface and three adapters:
 
-* ``MockLocalModelProvider`` - fully offline, deterministic inference used for
-  the prototype. Produces stable, seed-based responses so demos are repeatable.
-* ``OllamaProvider`` - optional adapter for a local Ollama runtime
-  (http://localhost:11434). It is *local* infrastructure, not a cloud API. It is
-  only used when ``KAVACH_INFERENCE_PROVIDER=ollama`` and is loopback-guarded.
+* ``MockLocalModelProvider`` - fully offline, deterministic inference for tests
+  and repeatable demos. It produces stable, seed-based responses.
+* ``OllamaProvider`` - adapter for a local Ollama runtime
+  (http://localhost:11434). Host development defaults to this local provider;
+  it is loopback-guarded in airgapped mode.
 * ``VLLMProvider`` - stub adapter for a local vLLM OpenAI-compatible server.
 
 All providers advertise ``is_external`` so the airgapped security guard can decide
@@ -14,6 +14,7 @@ whether they are permitted. Only cloud providers are considered external.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import time
@@ -70,7 +71,8 @@ class MockLocalModelProvider(BaseModelProvider):
     name = "mock-local"
     is_external = False
 
-    def generate(self, prompt: str, *, model: str = "Qwen3-4B", **kwargs: Any) -> GenerationResult:
+    def generate(self, prompt: str, *, model: str = config.OLLAMA_OTHER_MODEL,
+                 **kwargs: Any) -> GenerationResult:
         seed = _seed_int(prompt + model)
         # Deterministic pseudo latency/token counts for realism.
         latency = 40 + (seed % 260)
@@ -124,13 +126,17 @@ class OllamaProvider(BaseModelProvider):
         with urllib.request.urlopen(req, timeout=self.timeout_s) as resp:  # noqa: S310
             return json.loads(resp.read().decode("utf-8"))
 
-    def generate(self, prompt: str, *, model: str | None = None, **kwargs: Any) -> GenerationResult:
-        model = model or config.OLLAMA_MODEL
+    def generate(self, prompt: str, *, model: str | None = None,
+                 images: list[bytes] | None = None, **kwargs: Any) -> GenerationResult:
+        model = model or config.OLLAMA_OTHER_MODEL
         started = time.monotonic()
-        data = self._post("/api/generate", {
+        payload: dict[str, Any] = {
             "model": model, "prompt": prompt, "stream": False,
             "options": {"temperature": 0, "seed": 0},
-        })
+        }
+        if images:
+            payload["images"] = [base64.b64encode(image).decode("ascii") for image in images]
+        data = self._post("/api/generate", payload)
         return GenerationResult(
             text=str(data.get("response", "")).strip(),
             model=model,
@@ -140,7 +146,8 @@ class OllamaProvider(BaseModelProvider):
             meta={"deterministic": False},
         )
 
-    def embed(self, text: str, *, model: str = "nomic-embed-text") -> list[float]:
+    def embed(self, text: str, *, model: str | None = None) -> list[float]:
+        model = model or config.OLLAMA_EMBED_MODEL
         data = self._post("/api/embeddings", {"model": model, "prompt": text})
         return [float(x) for x in data.get("embedding", [])]
 
@@ -148,7 +155,9 @@ class OllamaProvider(BaseModelProvider):
         # No network probe here: /api/models must stay fast and offline-safe.
         enabled = config.INFERENCE_PROVIDER == self.name
         return {"provider": self.name, "status": "enabled" if enabled else "disabled",
-                "external": False, "base_url": self.base_url}
+                "external": False, "base_url": self.base_url,
+                "models": dict(config.OLLAMA_MODEL_BY_ROLE),
+                "embedding_model": config.OLLAMA_EMBED_MODEL}
 
 
 class VLLMProvider(BaseModelProvider):
@@ -160,7 +169,8 @@ class VLLMProvider(BaseModelProvider):
     def __init__(self, base_url: str = "http://localhost:8001/v1") -> None:
         self.base_url = base_url
 
-    def generate(self, prompt: str, *, model: str = "Qwen3-4B", **kwargs: Any) -> GenerationResult:
+    def generate(self, prompt: str, *, model: str = config.OLLAMA_REASONING_MODEL,
+                 **kwargs: Any) -> GenerationResult:
         raise NotImplementedError(
             "VLLMProvider is a stub in the prototype. Point base_url at a running "
             "vLLM server and implement the /v1/completions call to enable it."
@@ -198,18 +208,27 @@ def all_providers() -> dict[str, BaseModelProvider]:
     return dict(_PROVIDERS)
 
 
-def generate_with_fallback(prompt: str, *, model: str | None = None) -> GenerationResult:
+def model_for_role(role: str = "other") -> str:
+    """Return the configured Ollama model for a generation role."""
+    return config.OLLAMA_MODEL_BY_ROLE.get(role.strip().lower(), config.OLLAMA_OTHER_MODEL)
+
+
+def generate_with_fallback(prompt: str, *, role: str = "other",
+                           model: str | None = None, **kwargs: Any) -> GenerationResult:
     """Generate with the active provider, falling back to the mock on any failure.
 
     Keeps runs working when an optional local server (e.g. Ollama) is down.
-    ``meta['fallback']`` records why the mock was used.
+    ``meta['fallback']`` records why the mock was used. If no explicit model is
+    supplied, ``role`` selects the locally configured model.
     """
+    selected_model = model or model_for_role(role)
     provider = get_provider()
     if provider.name == DEFAULT_PROVIDER:
-        return provider.generate(prompt, model=model or "Qwen3-4B")
+        return provider.generate(prompt, model=selected_model, **kwargs)
     try:
-        return provider.generate(prompt)
+        return provider.generate(prompt, model=selected_model, **kwargs)
     except Exception as exc:  # noqa: BLE001 - any failure degrades to offline mock
-        result = _PROVIDERS[DEFAULT_PROVIDER].generate(prompt, model=model or "Qwen3-4B")
+        result = _PROVIDERS[DEFAULT_PROVIDER].generate(
+            prompt, model=selected_model, **kwargs)
         result.meta["fallback"] = f"{provider.name} unavailable: {exc!r}"
         return result

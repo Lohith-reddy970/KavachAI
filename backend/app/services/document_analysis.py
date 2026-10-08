@@ -1,41 +1,40 @@
 """Local, deterministic analysis of an uploaded document.
 
-Used when a run targets a real uploaded file instead of the fictional demo
-scenario. Nothing here calls a model: findings are *extractive* - sentences of
-the document that match a small risk lexicon - so every finding quotes its own
-source text and can be re-checked against it by the verification agent.
+Used when a run targets an uploaded file. Risk findings are *extractive* -
+sentences that match the selected profile's risk vocabulary - so each one quotes
+source text that can be re-checked by the verification agent. Field extraction
+is also literal; summaries are handled by the reasoning agent.
 """
 from __future__ import annotations
 
 import re
 from pathlib import Path
 
+from ..domains.profiles import get_profile
+
 #: Separates pages in extracted text so a sentence can be traced to its page.
 PAGE_BREAK = "\f"
 MAX_FINDINGS = 8
 MAX_EXCERPT_CHARS = 400
 
-# severity -> word stems that signal it (matched at the start of a word).
-_LEXICON: dict[str, tuple[str, ...]] = {
-    "high": ("leak", "crack", "ruptur", "fail", "fire", "explosi", "unsafe", "hazard",
-             "critical", "breach", "violat", "non-complian", "noncomplian", "vulnerab",
-             "below minimum", "exceeds", "exceeded", "shutdown"),
-    "medium": ("corro", "erosion", "wear", "worn", "degrad", "sluggish", "overdue",
-               "deviat", "anomal", "defect", "fouling", "vibrat", "damage", "warning",
-               "replace", "repair", "overheat"),
-    "low": ("recommend", "monitor", "follow-up", "follow up", "trend", "re-inspect",
-            "reinspect", "investigat"),
-}
 _SEVERITY_ORDER = ("high", "medium", "low")
 _SENTENCE_RE = re.compile(r"(?<=[.!?])\s+|\n+")
 _TAG_RE = re.compile(r"\b[A-Z]{1,4}-\d{2,4}[A-Z]?\b")
+_DATE_RE = re.compile(
+    r"\b(?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4})\b"
+)
+_MEASUREMENT_RE = re.compile(
+    r"\b\d+(?:\.\d+)?\s?(?:mm|cm|km|m|kg|g|mg|bar|psi|kpa|mpa|°c|%|"
+    r"days?|hours?|years?)(?=\s|[,.;:)]|$)",
+    re.IGNORECASE,
+)
 _SPACE_RE = re.compile(r"\s+")
 
 
 def extract_text(path: str) -> tuple[str, str]:
     """Return ``(text, note)`` for a stored document; never raises.
 
-    The format comes from the file extension: seeded demo documents store a
+    The format comes from the file extension: seeded sample documents store a
     category ("report", "manual") in ``doc_type``, not a file type. ``note`` is
     empty on success, otherwise it says why no text is available (unsupported
     type, optional library missing, unreadable file).
@@ -62,18 +61,20 @@ def extract_text(path: str) -> tuple[str, str]:
             return PAGE_BREAK.join(pages), ""
     except Exception as exc:  # noqa: BLE001 - a corrupt upload must not 500 the run
         return "", f"could not read {doc_type} file ({type(exc).__name__})"
-    return "", f"no local text extractor for .{doc_type} files (no OCR/vision model in the prototype)"
+    return "", (f"no text extractor for .{doc_type} files; OCR is not enabled. "
+                 "Use Summary for an image description.")
 
 
 def _normalize(text: str) -> str:
     return _SPACE_RE.sub(" ", text).strip().lower()
 
 
-def _signals(sentence: str) -> tuple[str, list[str]]:
+def _signals(sentence: str, profile_id: str) -> tuple[str, list[str]]:
     """Return (severity, matched stems) for a sentence; severity '' if no match."""
     low = sentence.lower()
+    lexicon = get_profile(profile_id).risk_terms
     hits: dict[str, list[str]] = {}
-    for severity, stems in _LEXICON.items():
+    for severity, stems in lexicon.items():
         found = [s for s in stems if re.search(rf"\b{re.escape(s)}", low)]
         if found:
             hits[severity] = found
@@ -83,8 +84,8 @@ def _signals(sentence: str) -> tuple[str, list[str]]:
     return "", []
 
 
-def find_findings(text: str, source: str) -> list[dict]:
-    """Extract up to ``MAX_FINDINGS`` findings, most severe first, each quoting ``source``."""
+def find_findings(text: str, source: str, profile_id: str = "general") -> list[dict]:
+    """Extract findings using the selected profile's risk terms."""
     candidates: list[tuple[int, int, dict]] = []
     order = 0
     for page_no, page in enumerate(text.split(PAGE_BREAK), start=1):
@@ -92,7 +93,7 @@ def find_findings(text: str, source: str) -> list[dict]:
             sentence = _SPACE_RE.sub(" ", raw).strip()
             if len(sentence) < 25:
                 continue
-            severity, stems = _signals(sentence)
+            severity, stems = _signals(sentence, profile_id)
             if not severity:
                 continue
             excerpt = sentence[:MAX_EXCERPT_CHARS]
@@ -113,6 +114,52 @@ def find_findings(text: str, source: str) -> list[dict]:
             order += 1
     candidates.sort(key=lambda c: (c[0], c[1]))
     return [c[2] for c in candidates[:MAX_FINDINGS]]
+
+
+def extract_fields(text: str, source: str) -> list[dict]:
+    """Extract literal dates, equipment identifiers, and measurements with citations."""
+    patterns = (
+        ("equipment identifier", _TAG_RE),
+        ("date", _DATE_RE),
+        ("measurement", _MEASUREMENT_RE),
+    )
+    findings: list[dict] = []
+    seen: set[tuple[str, str]] = set()
+    for page_no, page in enumerate(text.split(PAGE_BREAK), start=1):
+        for raw in _SENTENCE_RE.split(page):
+            sentence = _SPACE_RE.sub(" ", raw).strip()
+            if not sentence:
+                continue
+            for field_name, pattern in patterns:
+                for match in pattern.finditer(sentence):
+                    value = match.group(0)
+                    key = (field_name, value.lower())
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    if len(sentence) <= MAX_EXCERPT_CHARS:
+                        excerpt = sentence
+                    else:
+                        start = max(0, min(match.start() - 120,
+                                           len(sentence) - MAX_EXCERPT_CHARS))
+                        excerpt = sentence[start:start + MAX_EXCERPT_CHARS]
+                    findings.append({
+                        "title": f"Extracted {field_name}: {value}",
+                        "description": f"Literal {field_name} extracted from the source text.",
+                        "severity": "info",
+                        "confidence": 100.0,
+                        "equipment_id": value if field_name == "equipment identifier" else "",
+                        "needs_review": 0,
+                        "evidence": [{
+                            "source": source,
+                            "page": page_no,
+                            "excerpt": excerpt,
+                            "confidence": 100.0,
+                        }],
+                    })
+                    if len(findings) >= MAX_FINDINGS:
+                        return findings
+    return findings
 
 
 def verify_findings(findings: list[dict], text: str) -> dict:

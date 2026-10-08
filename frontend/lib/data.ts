@@ -1,6 +1,6 @@
-// KAVACH AI — baked, deterministic demo dataset.
-// The UI runs standalone on this data so the judge demo works fully offline,
-// with or without the FastAPI backend. Everything here is FICTIONAL.
+// KAVACH AI — bundled, deterministic sample dataset.
+// The UI runs standalone on this data, with or without the FastAPI backend.
+// Everything here is FICTIONAL sample content.
 // Facility: KAVACH DEMO REFINERY · Unit 4.
 
 import type {
@@ -94,74 +94,62 @@ export const documents: KDocument[] = [
 
 export const models: KModel[] = [
   {
-    id: "qwen3-4b",
-    name: "Qwen3-4B",
+    id: "qwen3-8b",
+    name: "qwen3:8b",
     kind: "reasoning",
-    role: "Reasoning / long-form text",
-    params: "4.0B",
-    quant: "Q5_K_M",
-    status: "READY",
-    vramGb: 4.6,
-    ctx: "32K",
-    tokensPerSec: 58,
-  },
-  {
-    id: "vision-vl",
-    name: "Qwen2-VL-7B",
-    kind: "vision",
-    role: "P&ID / diagram / image analysis",
-    params: "7.0B",
+    role: "Reasoning / evidence synthesis",
+    params: "8.2B",
     quant: "Q4_K_M",
     status: "READY",
-    vramGb: 6.9,
-    ctx: "16K",
-    tokensPerSec: 34,
+    sizeGb: 5.2,
+    ctx: "40K max",
+    tokensPerSec: 0,
   },
   {
-    id: "code-model",
-    name: "DeepSeek-Coder-6.7B",
-    kind: "code",
-    role: "Internal source-code reasoning",
-    params: "6.7B",
-    quant: "Q5_K_M",
-    status: "READY",
-    vramGb: 6.1,
-    ctx: "16K",
-    tokensPerSec: 41,
-  },
-  {
-    id: "fast-model",
-    name: "Phi-3-mini",
-    kind: "fast",
-    role: "Classification / extraction",
-    params: "3.8B",
+    id: "llava-7b",
+    name: "llava:7b",
+    kind: "vision",
+    role: "P&ID / image analysis",
+    params: "7.0B",
     quant: "Q4_0",
     status: "READY",
-    vramGb: 2.3,
-    ctx: "8K",
-    tokensPerSec: 96,
+    sizeGb: 4.7,
+    ctx: "32K max",
+    tokensPerSec: 0,
   },
   {
-    id: "embed-model",
-    name: "bge-large-en",
+    id: "llama3-2-3b",
+    name: "llama3.2:3b",
+    kind: "fast",
+    role: "Code, classification, extraction, and other text tasks",
+    params: "3.2B",
+    quant: "Q4_K_M",
+    status: "READY",
+    sizeGb: 2.0,
+    ctx: "128K max",
+    tokensPerSec: 0,
+  },
+  {
+    id: "nomic-embed-text",
+    name: "nomic-embed-text:latest",
     kind: "embedding",
     role: "Document embeddings (RAG)",
-    params: "335M",
+    params: "137M",
     quant: "FP16",
     status: "READY",
-    vramGb: 1.2,
-    ctx: "512",
+    sizeGb: 0.3,
+    ctx: "2K model context",
     tokensPerSec: 0,
   },
 ];
 
 export const routingRules: RoutingRule[] = [
-  { taskType: "P&ID / Diagram Analysis", modelId: "vision-vl", reason: "Image understanding required" },
-  { taskType: "Industrial Document Analysis", modelId: "qwen3-4b", reason: "Multi-document reasoning required" },
-  { taskType: "Code Generation / Review", modelId: "code-model", reason: "Source-code reasoning required" },
-  { taskType: "Document Summarization", modelId: "fast-model", reason: "Low-complexity text task" },
-  { taskType: "Classification / Extraction", modelId: "fast-model", reason: "Latency-sensitive routing" },
-  { taskType: "Semantic Retrieval", modelId: "embed-model", reason: "Vector embedding required" },
+  { taskType: "P&ID / Diagram Analysis", modelId: "llava-7b", reason: "Visual input requires a vision model" },
+  { taskType: "Industrial Document Analysis", modelId: "qwen3-8b", reason: "Evidence synthesis and reasoning" },
+  { taskType: "Code Generation / Review", modelId: "llama3-2-3b", reason: "Configured general-purpose model for other tasks" },
+  { taskType: "Document Summarization", modelId: "llama3-2-3b", reason: "Configured general-purpose model for other text tasks" },
+  { taskType: "Classification / Extraction", modelId: "llama3-2-3b", reason: "Configured smaller model for routine text tasks" },
+  { taskType: "Semantic Retrieval", modelId: "nomic-embed-text", reason: "Dedicated local embedding model" },
 ];
 
 export const knowledgeSources: KnowledgeSource[] = [
@@ -177,8 +165,8 @@ export const knowledgeStats = {
   chunks: 3482,
   embeddings: "Ready",
   vectorDb: "ONLINE",
-  model: "bge-large-en · FP16",
-  dimensions: 1024,
+  model: "nomic-embed-text · F16",
+  dimensions: 768,
 };
 
 export const evidence: Evidence[] = [
@@ -366,7 +354,7 @@ export const findings: Finding[] = [
     index: 9,
     title: "Fouling root-cause attribution (unverified)",
     detail:
-      "Model hypothesises HX-301 fouling is driven by crude feed quality change. No supporting evidence found in the indexed corpus — surfaced for engineer judgement rather than asserted.",
+      "Model hypothesises HX-301 fouling is driven by crude feed quality change. No supporting evidence found in the indexed corpus — surfaced for reviewer judgment rather than asserted.",
     severity: "low",
     confidence: 58,
     verified: false,
@@ -387,13 +375,13 @@ export const pidRegions: PidRegion[] = [
 
 // ---- Agent runs -----------------------------------------------------------
 
-export const DEMO_TASK =
-  "Analyze the uploaded inspection report and P&ID. Identify the relevant equipment, summarize the inspection findings, cross-reference the findings with the available engineering documentation, identify potential issues, and generate an engineering review report.";
+export const SAMPLE_TASK =
+  "Review the selected document for risks and cite supporting evidence.";
 
 export const primaryRunSteps = [
   { id: "s0", agent: "Security Agent", label: "Policy & classification check", detail: "3 CONFIDENTIAL docs · airgapped policy satisfied · 0 external calls", durationMs: 900 },
   { id: "s1", agent: "Router Agent", label: "Task classification", detail: "Industrial Document Analysis (multimodal)", durationMs: 1100 },
-  { id: "s2", agent: "Model Router", label: "Model routing", detail: "Qwen2-VL-7B (vision) + Qwen3-4B (reasoning)", durationMs: 800 },
+  { id: "s2", agent: "Model Router", label: "Model routing", detail: "llava:7b (vision) + qwen3:8b (reasoning) + llama3.2:3b (other)", durationMs: 800 },
   { id: "s3", agent: "Planner", label: "Execution plan created", detail: "6 steps · document → vision → RAG → reason → verify → deliver", durationMs: 1000 },
   { id: "s4", agent: "Document Agent", label: "OCR & text extraction", detail: "Inspection_Report_2026.pdf · 12 pages · OCR completed", durationMs: 2600 },
   { id: "s5", agent: "Vision Agent", label: "P&ID regions detected", detail: "6 regions · P-101, P-102, V-204, T-101, HX-301, PT-104", durationMs: 2400 },
@@ -408,7 +396,7 @@ export const runs: AgentRun[] = [
     id: "RUN-2026-0912",
     task: "Inspection Report vs P&ID — Engineering Review",
     agent: "Industrial Document Analyst",
-    model: "Qwen2-VL-7B + Qwen3-4B",
+    model: "llava:7b + qwen3:8b",
     startTime: "2026-09-04 17:42:22",
     durationMs: 30800,
     status: "REVIEW",
@@ -423,7 +411,7 @@ export const runs: AgentRun[] = [
     id: "RUN-2026-0911",
     task: "Summarize vendor negotiation notes (Q3)",
     agent: "Document Summarizer",
-    model: "Phi-3-mini",
+    model: "llama3.2:3b",
     startTime: "2026-09-04 16:18:04",
     durationMs: 6400,
     status: "COMPLETED",
@@ -438,7 +426,7 @@ export const runs: AgentRun[] = [
     id: "RUN-2026-0910",
     task: "Refactor internal tag-parser utility",
     agent: "Code Assistant",
-    model: "DeepSeek-Coder-6.7B",
+    model: "llama3.2:3b",
     startTime: "2026-09-04 15:02:51",
     durationMs: 9100,
     status: "COMPLETED",
@@ -453,7 +441,7 @@ export const runs: AgentRun[] = [
     id: "RUN-2026-0909",
     task: "Board deck: Unit 4 turnaround readiness",
     agent: "Presentation Builder",
-    model: "Qwen3-4B",
+    model: "qwen3:8b",
     startTime: "2026-09-04 11:44:12",
     durationMs: 12400,
     status: "COMPLETED",
@@ -547,9 +535,9 @@ export const auditLog: AuditEntry[] = [
   { ts: "17:42:12", actor: "security-agent", action: "Classification set", detail: "CONFIDENTIAL · access Eng-L2", level: "secure" },
   { ts: "17:42:13", actor: "document-agent", action: "OCR executed locally", detail: "Tesseract · 12 pages · no network", level: "info" },
   { ts: "17:42:15", actor: "policy", action: "External call blocked", detail: "egress denied by airgapped policy", level: "block" },
-  { ts: "17:42:17", actor: "knowledge-agent", action: "Document indexed", detail: "168 chunks · bge-large-en embeddings", level: "info" },
+  { ts: "17:42:17", actor: "knowledge-agent", action: "Document indexed", detail: "168 chunks · nomic-embed-text embeddings", level: "info" },
   { ts: "17:42:22", actor: "router-agent", action: "Agent run started", detail: "RUN-2026-0912", level: "info" },
-  { ts: "17:42:25", actor: "model-router", action: "Model selected", detail: "Qwen2-VL-7B + Qwen3-4B", level: "info" },
+  { ts: "17:42:25", actor: "model-router", action: "Model selected", detail: "llava:7b (vision) + qwen3:8b (reasoning)", level: "info" },
   { ts: "17:42:41", actor: "knowledge-agent", action: "Evidence retrieved", detail: "8 chunks · avg relevance 85%", level: "info" },
   { ts: "17:42:48", actor: "verification-agent", action: "Verification completed", detail: "8/9 evidence-backed · 94%", level: "secure" },
   { ts: "17:42:52", actor: "deliverable-agent", action: "Report generated", detail: "Engineering Review Report (PDF)", level: "info" },
@@ -564,10 +552,10 @@ export const systemStatus = {
   cpu: 34,
   ram: 62,
   services: [
-    { name: "Qwen3-4B", detail: "reasoning", status: "ONLINE" as const },
-    { name: "Qwen2-VL-7B", detail: "vision", status: "ONLINE" as const },
-    { name: "DeepSeek-Coder", detail: "code", status: "ONLINE" as const },
-    { name: "Phi-3-mini", detail: "fast", status: "ONLINE" as const },
+    { name: "qwen3:8b", detail: "reasoning", status: "ONLINE" as const },
+    { name: "llava:7b", detail: "vision", status: "ONLINE" as const },
+    { name: "llama3.2:3b", detail: "other tasks", status: "ONLINE" as const },
+    { name: "nomic-embed-text", detail: "embeddings", status: "ONLINE" as const },
     { name: "Vector DB", detail: "chroma", status: "ONLINE" as const },
     { name: "OCR Engine", detail: "tesseract", status: "ONLINE" as const },
     { name: "Sandbox", detail: "gVisor", status: "SECURE" as const },

@@ -4,81 +4,129 @@
 
 :root {
   color-scheme: light;
+  --canvas: 232 229 220;
+  --surface: 242 239 230;
+  --surface-raised: 248 245 236;
+  --surface-inset: 226 221 208;
+  --line: 201 195 181;
+  --line-strong: 170 164 147;
+  --ink: 32 41 35;
+  --ink-muted: 82 96 86;
+  --ink-faint: 122 129 118;
+  --signal: 201 79 48;
+  --signal-dim: 148 59 39;
+  --signal-glow: 232 123 83;
+  --caution: 166 108 28;
+  --danger: 183 61 43;
+  --verified: 63 112 81;
+  --info: 66 109 118;
+  --rail: 29 38 33;
+  --rail-raised: 41 53 46;
+  --rail-line: 59 70 62;
+  --rail-ink: 244 239 226;
+  --rail-muted: 174 184 173;
+  --rail-faint: 120 132 122;
+  --rail-accent: 239 128 86;
+  --rail-meter: 217 99 64;
 }
 
 * {
-  border-color: theme("colors.line.DEFAULT");
+  border-color: rgb(var(--line));
 }
 
 html,
 body {
-  background-color: theme("colors.canvas");
-  color: theme("colors.ink.DEFAULT");
+  background-color: rgb(var(--canvas));
+  color: rgb(var(--ink));
   font-family: theme("fontFamily.sans");
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-kerning: normal;
 }
 
 body {
   background-image:
-    radial-gradient(
-      900px 480px at 90% -8%,
-      rgba(7, 140, 148, 0.1),
-      transparent 62%
-    ),
-    radial-gradient(
-      800px 520px at -10% 110%,
-      rgba(255, 184, 77, 0.12),
-      transparent 58%
-    ),
-    linear-gradient(135deg, #ffffff 0%, #ffffff 48%, #fffaf0 100%);
+    linear-gradient(rgb(var(--ink) / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--ink) / 0.035) 1px, transparent 1px),
+    radial-gradient(ellipse at 88% 2%, rgb(var(--signal) / 0.11), transparent 34%),
+    radial-gradient(ellipse at 4% 82%, rgb(var(--verified) / 0.09), transparent 34%),
+    linear-gradient(135deg, #ebe8df 0%, #e3dfd4 52%, #ece8de 100%);
+  background-size: 30px 30px, 30px 30px, auto, auto, cover;
   background-attachment: fixed;
 }
 
-/* Thin control-room scrollbars */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-::-webkit-scrollbar-track {
-  background: theme("colors.surface.inset");
-}
-::-webkit-scrollbar-thumb {
-  background: theme("colors.line.strong");
-  border-radius: 2px;
-  border: 2px solid theme("colors.surface.inset");
-}
-::-webkit-scrollbar-thumb:hover {
-  background: theme("colors.ink.faint");
+::selection {
+  background: rgb(var(--signal) / 0.22);
+  color: #202923;
 }
 
-::selection {
-  background: rgba(7, 140, 148, 0.2);
-  color: #15233b;
+:focus-visible {
+  outline: 2px solid rgb(var(--signal));
+  outline-offset: 2px;
+}
+
+/* Narrow, instrument-like scrollbars */
+::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+::-webkit-scrollbar-track {
+  background: #dcd7ca;
+}
+::-webkit-scrollbar-thumb {
+  background: #a69f8f;
+  border: 2px solid #dcd7ca;
+  border-radius: 1px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--signal));
+}
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @layer components {
-  /* Panel: the primary light dashboard surface. */
+  /* Paper panels with a restrained machine-ink edge. */
   .panel {
-    @apply relative rounded-[6px] border border-line bg-surface shadow-panel;
+    @apply relative rounded-[3px] border border-line bg-surface shadow-panel;
   }
   .panel-raised {
-    @apply relative rounded-[6px] border border-line bg-surface-raised shadow-panel;
+    @apply relative rounded-[3px] border border-line-strong bg-surface-raised shadow-panel;
   }
 
-  /* Eyebrow label — the mono utility caption used across the console */
+  .panel-raised::before {
+    content: "";
+    position: absolute;
+    top: -1px;
+    left: 14px;
+    width: 34px;
+    height: 2px;
+    background: rgb(var(--signal));
+  }
+
+  /* Eyebrows read like printed section codes on a service manual. */
   .eyebrow {
-    @apply font-mono text-2xs uppercase tracking-[0.18em] text-ink-faint;
+    @apply font-mono text-2xs uppercase tracking-[0.2em] text-ink-faint;
   }
 
-  /* Status pill */
+  .page-enter > div > * {
+    animation: pageIn 0.55s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+  }
+  .page-enter > div > *:nth-child(1) { animation-delay: 20ms; }
+  .page-enter > div > *:nth-child(2) { animation-delay: 65ms; }
+  .page-enter > div > *:nth-child(3) { animation-delay: 110ms; }
+  .page-enter > div > *:nth-child(4) { animation-delay: 155ms; }
+  .page-enter > div > *:nth-child(5) { animation-delay: 200ms; }
+  .page-enter > div > *:nth-child(6) { animation-delay: 245ms; }
+
   .pill {
-    @apply inline-flex items-center gap-1.5 rounded-full border px-2 py-1 font-mono text-2xs uppercase tracking-[0.1em];
+    @apply inline-flex items-center gap-1.5 rounded-[2px] border px-2 py-1 font-mono text-2xs uppercase tracking-[0.1em];
   }
 
-  /* Tag chip — refinery ISA equipment tags (P-101, V-204 ...) */
   .tag {
-    @apply inline-flex items-center rounded-full border border-signal/30 bg-signal/10 px-1.5 py-0.5 font-mono text-2xs font-semibold tracking-wide text-signal;
+    @apply inline-flex items-center rounded-[2px] border border-signal/35 bg-signal/10 px-1.5 py-0.5 font-mono text-2xs font-semibold tracking-wide text-signal;
   }
 
   .led {
@@ -86,21 +134,27 @@ body {
   }
 
   .grid-bg {
-    background-size: 22px 22px;
+    background-size: 18px 18px;
     @apply bg-grid;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full border px-3 py-2 font-mono text-xs font-semibold uppercase tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex items-center justify-center gap-2 rounded-[2px] border px-3 py-2 font-mono text-xs font-semibold uppercase tracking-[0.08em] transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
   }
   .btn-primary {
-    @apply border-signal/50 bg-signal/15 text-signal hover:bg-signal/25;
+    @apply border-signal bg-signal text-[#fff8ee] shadow-glow hover:bg-signal-dim;
   }
   .btn-ghost {
-    @apply border-line bg-surface-inset text-ink-muted hover:border-line-strong hover:text-ink;
+    @apply border-line-strong bg-surface-inset text-ink-muted hover:border-ink-muted hover:bg-surface-raised hover:text-ink;
   }
   .btn-danger {
-    @apply border-danger/50 bg-danger/10 text-danger hover:bg-danger/20;
+    @apply border-danger bg-danger text-white hover:bg-danger/90;
   }
 }
 

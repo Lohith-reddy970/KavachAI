@@ -1,7 +1,7 @@
 """Pydantic request/response schemas for the KAVACH AI API."""
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -19,13 +19,18 @@ class TaskCreate(BaseModel):
     task_type: Optional[str] = None
 
 
+class DocumentAnalysisRequest(TaskCreate):
+    profile: str = Field(default="general", min_length=1, max_length=40)
+    analysis_mode: Literal["risk_review", "summary", "extract_fields"] = "risk_review"
+
+
 class DemoRunRequest(BaseModel):
     scenario: Optional[str] = "refinery_inspection"
 
 
 class ReviewRequest(BaseModel):
     note: Optional[str] = Field(default="", max_length=2000)
-    reviewer: Optional[str] = "inspector@kavach.local"
+    reviewer: Optional[str] = "reviewer@kavach.local"
 
 
 class KnowledgeSearchRequest(BaseModel):

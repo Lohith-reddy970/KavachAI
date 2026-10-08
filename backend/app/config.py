@@ -14,7 +14,7 @@ APP_NAME = "KAVACH AI"
 APP_TAGLINE = "Sovereign On-Premise Agentic AI Workbench"
 
 # --- Paths --------------------------------------------------------------------
-# backend/app/config.py -> backend/app -> backend -> repo root (26117)
+# backend/app/config.py -> backend/app -> backend -> repository root
 APP_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = APP_DIR.parent
 REPO_ROOT = BACKEND_DIR.parent
@@ -45,14 +45,27 @@ EXTERNAL_PROVIDERS = {"openai", "anthropic", "gemini", "google", "azure", "coher
 
 
 # --- Local inference ----------------------------------------------------------
-# 'mock' (default) keeps the fully deterministic offline provider. 'ollama' opts
-# in to a local Ollama server; it must be a loopback URL in airgapped mode.
+# Ollama uses the locally installed models for each role. The mock provider is
+# still available for deterministic demos and tests. OLLAMA_MODEL is retained as
+# a compatibility override for the non-reasoning/non-vision text role.
 _PROVIDER_ALIASES = {"mock": "mock-local", "mock-local": "mock-local", "ollama": "ollama"}
 INFERENCE_PROVIDER = _PROVIDER_ALIASES.get(
-    os.getenv("KAVACH_INFERENCE_PROVIDER", "mock").strip().lower(), "mock-local")
+    os.getenv("KAVACH_INFERENCE_PROVIDER", "ollama").strip().lower(), "mock-local")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:4b")
-OLLAMA_TIMEOUT_S = float(os.getenv("OLLAMA_TIMEOUT_S", "20"))
+OLLAMA_REASONING_MODEL = os.getenv("OLLAMA_REASONING_MODEL", "qwen3:8b").strip()
+OLLAMA_VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "llava:7b").strip()
+OLLAMA_OTHER_MODEL = os.getenv(
+    "OLLAMA_OTHER_MODEL", os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+).strip()
+OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text:latest").strip()
+# Legacy alias used by older integrations.
+OLLAMA_MODEL = OLLAMA_OTHER_MODEL
+OLLAMA_MODEL_BY_ROLE = {
+    "reasoning": OLLAMA_REASONING_MODEL,
+    "vision": OLLAMA_VISION_MODEL,
+    "other": OLLAMA_OTHER_MODEL,
+}
+OLLAMA_TIMEOUT_S = float(os.getenv("OLLAMA_TIMEOUT_S", "120"))
 
 # --- Agentic planner ----------------------------------------------------------
 PLANNER_MAX_STEPS = int(os.getenv("KAVACH_PLANNER_MAX_STEPS", "10"))

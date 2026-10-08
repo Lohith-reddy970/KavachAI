@@ -49,7 +49,7 @@ export function ReportView({ onClose }: { onClose?: () => void }) {
           <SummaryStat label="Verification" value="94%" tone="verified" bar={94} />
           <SummaryStat label="Evidence-Backed" value="8 / 9" tone="signal" bar={89} />
           <SummaryStat label="Needs Review" value="1" tone="caution" bar={11} />
-          <SummaryStat label="Engineer-Approved" value={`${approvedCount} / ${findings.length}`} tone="verified" bar={(approvedCount / findings.length) * 100} />
+          <SummaryStat label="Reviewer-Approved" value={`${approvedCount} / ${findings.length}`} tone="verified" bar={(approvedCount / findings.length) * 100} />
         </div>
 
         <section className="mb-5">
@@ -59,7 +59,7 @@ export function ReportView({ onClose }: { onClose?: () => void }) {
             documentation identified <span className="text-ink">9 findings</span> across{" "}
             <span className="text-ink">6 equipment items</span>. One high-severity item
             (<span className="text-danger">P-101 outlet wall thickness</span>) and one unverified hypothesis
-            require engineer review before approval. Overall verification score is{" "}
+            require reviewer attention before approval. Overall verification score is{" "}
             <span className="text-verified">94%</span>, with 8 of 9 findings backed by retrieved source evidence.
           </p>
         </section>
@@ -81,7 +81,7 @@ export function ReportView({ onClose }: { onClose?: () => void }) {
 
       <div className="flex items-center justify-between border-t border-line bg-surface-inset px-6 py-3">
         <span className="font-mono text-2xs text-ink-faint">
-          AI recommends · Engineer approves — not authoritative until signed off
+          AI recommends · Reviewer decides — not authoritative until signed off
         </span>
         <div className="flex items-center gap-2">
           <button

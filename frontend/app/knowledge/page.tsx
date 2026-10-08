@@ -18,10 +18,10 @@ const SAMPLES = [
 
 const TAG_RE = /\b[A-Z]{1,3}-\d{3}\b/g;
 
-type SearchMode = "live" | "demo";
+type SearchMode = "live" | "sample";
 
-// Offline fallback: deterministic keyword search over the baked demo evidence.
-function demoSearch(q: string): Evidence[] {
+// Offline fallback: deterministic keyword search over the bundled sample evidence.
+function sampleSearch(q: string): Evidence[] {
   const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
   return evidence
     .map((e) => {
@@ -51,7 +51,7 @@ export default function KnowledgePage() {
   const [query, setQuery] = useState(SAMPLES[0]);
   const [results, setResults] = useState<Evidence[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState<SearchMode>("demo");
+  const [mode, setMode] = useState<SearchMode>("sample");
   const [error, setError] = useState<string | null>(null);
   const requestId = useRef(0);
 
@@ -75,9 +75,9 @@ export default function KnowledgePage() {
     } catch (err) {
       if (id !== requestId.current) return;
       const reason = err instanceof Error && err.name !== "AbortError" ? err.message : "no response";
-      setResults(demoSearch(text));
-      setMode("demo");
-      setError(`Backend search unavailable (${reason}) — showing results from the baked demo dataset.`);
+      setResults(sampleSearch(text));
+      setMode("sample");
+      setError(`Backend search unavailable (${reason}) — showing results from the bundled sample dataset.`);
     } finally {
       if (id === requestId.current) setLoading(false);
     }
@@ -160,7 +160,7 @@ export default function KnowledgePage() {
                   <span className="eyebrow">Retrieved Evidence</span>
                   {loading ? null : (
                     <StatusPill tone={mode === "live" ? "verified" : "caution"}>
-                      {mode === "live" ? "Live backend" : "Demo fallback"}
+                      {mode === "live" ? "Live backend" : "Sample fallback"}
                     </StatusPill>
                   )}
                 </span>

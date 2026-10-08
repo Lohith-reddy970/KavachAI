@@ -21,10 +21,14 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from .. import config
+
 # --- Optional heavy deps (guarded) -------------------------------------------
 _ST_AVAILABLE = False
 _CHROMA_AVAILABLE = False
 _st_model = None
+_ollama_embedding_failed = False
+_active_embedding_backend: str | None = None
 
 try:  # pragma: no cover - environment dependent
     from sentence_transformers import SentenceTransformer  # type: ignore
@@ -46,7 +50,11 @@ _WORD_RE = re.compile(r"[A-Za-z0-9]+")
 
 def backend_info() -> dict[str, Any]:
     """Report which embedding/vector backends are active."""
-    if _ST_AVAILABLE:
+    if _active_embedding_backend:
+        embed_backend = _active_embedding_backend
+    elif config.INFERENCE_PROVIDER == "ollama" and not _ollama_embedding_failed:
+        embed_backend = f"ollama ({config.OLLAMA_EMBED_MODEL})"
+    elif _ST_AVAILABLE:
         embed_backend = "sentence-transformers"
     else:
         embed_backend = "hash-embedding (pure-python fallback)"
@@ -110,16 +118,33 @@ def hash_embedding(text: str, dim: int = EMBED_DIM) -> list[float]:
 
 
 def embed(text: str) -> list[float]:
-    """Return an embedding, using sentence-transformers if available."""
+    """Embed locally with Ollama/Nomic, Sentence Transformers, or hash fallback."""
     global _st_model
+    global _ollama_embedding_failed, _active_embedding_backend
+
+    if config.INFERENCE_PROVIDER == "ollama" and not _ollama_embedding_failed:
+        try:
+            from ..models.providers import get_provider
+
+            vector = get_provider().embed(text, model=config.OLLAMA_EMBED_MODEL)
+            if vector:
+                _active_embedding_backend = f"ollama ({config.OLLAMA_EMBED_MODEL})"
+                return vector
+            _ollama_embedding_failed = True
+        except Exception:  # noqa: BLE001 - local RAG remains available without Ollama
+            _ollama_embedding_failed = True
+
     if _ST_AVAILABLE:  # pragma: no cover - environment dependent
         try:
             if _st_model is None:
                 _st_model = SentenceTransformer("all-MiniLM-L6-v2")
             vec = _st_model.encode(text, normalize_embeddings=True)
+            _active_embedding_backend = "sentence-transformers"
             return [float(x) for x in vec]
         except Exception:  # noqa: BLE001 - fall back on any failure
+            _active_embedding_backend = "hash-embedding (pure-python fallback)"
             return hash_embedding(text)
+    _active_embedding_backend = "hash-embedding (pure-python fallback)"
     return hash_embedding(text)
 
 

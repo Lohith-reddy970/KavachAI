@@ -24,7 +24,7 @@ export default function RunsPage() {
       <LiveRuns />
 
       <Panel>
-        <PanelHeader title="Run History" icon={<Activity className="h-4 w-4" />} sub="Baked demo dataset · all executions are local" />
+        <PanelHeader title="Run History" icon={<Activity className="h-4 w-4" />} sub="Bundled sample runs · all executions are local" />
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>

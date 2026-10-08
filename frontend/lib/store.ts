@@ -21,11 +21,10 @@ interface KavachState {
   logLines: string[];
   externalTransfers: 0; // structurally always zero — sovereignty guarantee
   reviews: ReviewMap;
-  demoActive: boolean;
   showReport: boolean;
   _timers: ReturnType<typeof setTimeout>[];
 
-  startRun: (opts?: { demo?: boolean }) => void;
+  startRun: () => void;
   reset: () => void;
   setReview: (findingId: string, state: ReviewState) => void;
   openReport: () => void;
@@ -53,11 +52,10 @@ export const useKavach = create<KavachState>((set, get) => ({
   logLines: [],
   externalTransfers: 0,
   reviews: initialReviews(),
-  demoActive: false,
   showReport: false,
   _timers: [],
 
-  startRun: (opts) => {
+  startRun: () => {
     const { _timers } = get();
     _timers.forEach(clearTimeout);
 
@@ -68,7 +66,6 @@ export const useKavach = create<KavachState>((set, get) => ({
       activeIndex: -1,
       progress: 0,
       logLines: ["› kavach run initiated — airgapped policy engaged"],
-      demoActive: !!opts?.demo,
       showReport: false,
       _timers: [],
     });
@@ -126,7 +123,6 @@ export const useKavach = create<KavachState>((set, get) => ({
       activeIndex: -1,
       progress: 0,
       logLines: [],
-      demoActive: false,
       showReport: false,
       reviews: initialReviews(),
       _timers: [],

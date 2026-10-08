@@ -111,7 +111,7 @@ FINDINGS = [
     {
         "title": "HX-301 fouling factor trending upward (needs human review)",
         "description": ("Heat exchanger HX-301 shows an upward fouling trend. Currently within "
-                        "limits but the trend is ambiguous and flagged for engineer review."),
+                        "limits but the trend is ambiguous and flagged for reviewer attention."),
         "severity": "low",
         "confidence": 82.0,
         "equipment_id": "HX-301",

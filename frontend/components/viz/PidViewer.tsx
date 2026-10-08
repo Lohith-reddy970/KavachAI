@@ -8,12 +8,12 @@ import { ScanLine, Loader2 } from "lucide-react";
 import { Tag } from "@/components/ui";
 
 const kindColor: Record<PidRegion["kind"], string> = {
-  pump: "#3DD4C0",
-  valve: "#FFB020",
-  tank: "#5B9DFF",
-  exchanger: "#34D399",
-  instrument: "#8A98AC",
-  line: "#5A6883",
+  pump: "#c94f30",
+  valve: "#a66c1c",
+  tank: "#3f7051",
+  exchanger: "#426d76",
+  instrument: "#7a8176",
+  line: "#777c70",
 };
 
 type Phase = "idle" | "scanning" | "done";
@@ -56,13 +56,13 @@ export function PidViewer() {
             {/* drawing grid */}
             <defs>
               <pattern id="pgrid" width="4" height="4" patternUnits="userSpaceOnUse">
-                <path d="M4 0 H0 V4" fill="none" stroke="#121A28" strokeWidth="0.3" />
+                <path d="M4 0 H0 V4" fill="none" stroke="#c9c3b5" strokeWidth="0.3" />
               </pattern>
             </defs>
             <rect x="0" y="0" width="100" height="92" fill="url(#pgrid)" />
 
             {/* ---- pipelines ---- */}
-            <g stroke="#3B4A63" strokeWidth="0.7" fill="none" strokeLinecap="round">
+            <g stroke="#596258" strokeWidth="0.7" fill="none" strokeLinecap="round">
               {/* tank -> suction header */}
               <path d="M21 47 H26 V63 H30" />
               <path d="M26 63 V81 H30" />
@@ -85,7 +85,7 @@ export function PidViewer() {
             {/* ---- equipment symbols ---- */}
             {/* T-101 feed tank */}
             <g>
-              <path d="M6 34 Q6 30 10.5 30 H16.5 Q21 30 21 34 V64 H6 Z" fill="#0E1420" stroke="#5B9DFF" strokeWidth="0.6" />
+              <path d="M6 34 Q6 30 10.5 30 H16.5 Q21 30 21 34 V64 H6 Z" fill="#f2efe6" stroke="#3f7051" strokeWidth="0.6" />
               <text x="13.5" y="50" textAnchor="middle" className="fill-ink font-mono" fontSize="3">T-101</text>
             </g>
             {/* P-101 / P-102 pumps (circle + discharge triangle) */}
@@ -94,27 +94,27 @@ export function PidViewer() {
               { cx: 34.5, cy: 81, id: "P-102" },
             ].map((p) => (
               <g key={p.id}>
-                <circle cx={p.cx} cy={p.cy} r="4.5" fill="#0E1420" stroke={kindColor.pump} strokeWidth="0.6" />
+                <circle cx={p.cx} cy={p.cy} r="4.5" fill="#f2efe6" stroke={kindColor.pump} strokeWidth="0.6" />
                 <path d={`M${p.cx} ${p.cy - 4.5} L${p.cx + 4} ${p.cy - 4.5} L${p.cx} ${p.cy}`} fill={kindColor.pump} opacity="0.5" />
                 <text x={p.cx} y={p.cy + 1} textAnchor="middle" className="fill-ink font-mono" fontSize="2.6">{p.id}</text>
               </g>
             ))}
             {/* HX-301 exchanger */}
             <g>
-              <rect x="50" y="40" width="18" height="16" rx="1" fill="#0E1420" stroke={kindColor.exchanger} strokeWidth="0.6" />
+              <rect x="50" y="40" width="18" height="16" rx="1" fill="#f2efe6" stroke={kindColor.exchanger} strokeWidth="0.6" />
               <line x1="50" y1="44" x2="68" y2="44" stroke={kindColor.exchanger} strokeWidth="0.35" />
               <line x1="50" y1="52" x2="68" y2="52" stroke={kindColor.exchanger} strokeWidth="0.35" />
               <text x="59" y="49.5" textAnchor="middle" className="fill-ink font-mono" fontSize="2.8">HX-301</text>
             </g>
             {/* V-204 relief valve (bowtie) */}
             <g>
-              <path d="M74 20 L82 30 L82 20 L74 30 Z" fill="#0E1420" stroke={kindColor.valve} strokeWidth="0.6" />
+              <path d="M74 20 L82 30 L82 20 L74 30 Z" fill="#f2efe6" stroke={kindColor.valve} strokeWidth="0.6" />
               <text x="78" y="17" textAnchor="middle" className="fill-caution font-mono" fontSize="2.6">V-204</text>
             </g>
             {/* PT-104 instrument */}
             <g>
-              <line x1="13.5" y1="30" x2="23.5" y2="19.5" stroke="#5A6883" strokeWidth="0.4" strokeDasharray="1 1" />
-              <circle cx="23.5" cy="19.5" r="3.5" fill="#0E1420" stroke={kindColor.instrument} strokeWidth="0.5" />
+              <line x1="13.5" y1="30" x2="23.5" y2="19.5" stroke="#777c70" strokeWidth="0.4" strokeDasharray="1 1" />
+              <circle cx="23.5" cy="19.5" r="3.5" fill="#f2efe6" stroke={kindColor.instrument} strokeWidth="0.5" />
               <text x="23.5" y="20.5" textAnchor="middle" className="fill-ink-muted font-mono" fontSize="2.2">PT</text>
             </g>
 

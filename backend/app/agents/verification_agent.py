@@ -15,6 +15,23 @@ class VerificationAgent(BaseAgent):
 
     def run(self, ctx: RunContext) -> RunContext:
         if ctx.artifacts.get("document"):
+            if ctx.artifacts.get("analysis_mode") == "summary":
+                ctx.verification_score = None
+                ctx.evidence_backed = "n/a"
+                ctx.artifacts["verification"] = {
+                    "score": None,
+                    "evidence_backed": "n/a",
+                    "total_evidence_citations": 0,
+                    "findings_backed": 0,
+                    "needs_human_review": [],
+                }
+                ctx.add_step(
+                    self.name,
+                    "Verification not applicable",
+                    status="skipped",
+                    detail="Summary mode does not generate findings to verify.",
+                )
+                return ctx
             return self._run_document(ctx)
 
         total_evidence = sum(len(f.get("evidence", [])) for f in ctx.findings)

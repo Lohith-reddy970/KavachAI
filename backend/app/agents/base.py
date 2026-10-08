@@ -37,7 +37,7 @@ class RunContext:
     evidence: list[dict] = field(default_factory=list)
     artifacts: dict[str, Any] = field(default_factory=dict)
     routing: dict[str, Any] = field(default_factory=dict)
-    verification_score: float = 0.0
+    verification_score: float | None = 0.0
     evidence_backed: str = ""
 
     def add_step(self, agent: str, message: str, status: str = "completed",

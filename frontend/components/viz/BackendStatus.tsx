@@ -7,7 +7,7 @@ import { StatusPill } from "@/components/ui";
 type State = "checking" | "connected" | "standalone";
 
 /**
- * Live probe of the optional FastAPI backend. Never blocks the demo: if the
+ * Live probe of the optional FastAPI backend. Never blocks the sample workflow: if the
  * backend is offline the UI simply reports it is running standalone on the
  * local mock-inference layer.
  */

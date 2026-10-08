@@ -12,8 +12,8 @@ import {
   YAxis,
 } from "recharts";
 
-const AXIS = "#5A6883";
-const GRID = "#1E2A3B";
+const AXIS = "#777c70";
+const GRID = "#d1ccbd";
 
 const tasksTrend = [
   { d: "Mon", tasks: 22 },
@@ -26,10 +26,10 @@ const tasksTrend = [
 ];
 
 const modelUsage = [
-  { m: "Qwen3-4B", n: 74, c: "#3DD4C0" },
-  { m: "Phi-3", n: 52, c: "#5B9DFF" },
-  { m: "Qwen2-VL", n: 38, c: "#FFB020" },
-  { m: "Coder", n: 23, c: "#34D399" },
+  { m: "qwen3:8b", n: 74, c: "#c94f30" },
+  { m: "llama3.2:3b", n: 52, c: "#3f7051" },
+  { m: "llava:7b", n: 38, c: "#a66c1c" },
+  { m: "nomic-embed", n: 23, c: "#426d76" },
 ];
 
 function TipBox({ active, payload, label, unit }: any) {
@@ -51,14 +51,14 @@ export function TasksTrendChart() {
       <AreaChart data={tasksTrend} margin={{ top: 6, right: 10, left: -8, bottom: 0 }}>
         <defs>
           <linearGradient id="taskFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#3DD4C0" stopOpacity={0.4} />
-            <stop offset="100%" stopColor="#3DD4C0" stopOpacity={0} />
+            <stop offset="0%" stopColor="#c94f30" stopOpacity={0.32} />
+            <stop offset="100%" stopColor="#c94f30" stopOpacity={0} />
           </linearGradient>
         </defs>
         <XAxis dataKey="d" stroke={AXIS} tick={{ fontSize: 10, fontFamily: "var(--font-mono)" }} axisLine={{ stroke: GRID }} tickLine={false} />
         <YAxis stroke={AXIS} tick={{ fontSize: 10, fontFamily: "var(--font-mono)" }} axisLine={false} tickLine={false} width={30} domain={[0, 40]} ticks={[0, 20, 40]} />
         <Tooltip content={<TipBox unit=" tasks" />} cursor={{ stroke: GRID }} />
-        <Area type="monotone" dataKey="tasks" stroke="#3DD4C0" strokeWidth={2} fill="url(#taskFill)" isAnimationActive={false} dot={{ r: 2, fill: "#3DD4C0" }} />
+        <Area type="monotone" dataKey="tasks" stroke="#c94f30" strokeWidth={2} fill="url(#taskFill)" isAnimationActive={false} dot={{ r: 2, fill: "#c94f30" }} />
       </AreaChart>
     </ResponsiveContainer>
   );
@@ -78,7 +78,7 @@ export function ModelUsageChart() {
           tickLine={false}
           width={70}
         />
-        <Tooltip content={<TipBox unit=" runs" />} cursor={{ fill: "#141C2A" }} />
+        <Tooltip content={<TipBox unit=" runs" />} cursor={{ fill: "#e2ddd0" }} />
         <Bar dataKey="n" radius={[0, 2, 2, 0]} barSize={14} isAnimationActive={false}>
           {modelUsage.map((e) => (
             <Cell key={e.m} fill={e.c} />

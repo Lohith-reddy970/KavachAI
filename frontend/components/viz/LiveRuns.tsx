@@ -33,11 +33,11 @@ const sevTone: Record<string, Tone> = {
 function kind(scenario: string | null): string {
   if (scenario === "agentic") return "Agentic planner";
   if (scenario?.startsWith("document:")) return `Document · ${scenario.slice(9)}`;
-  return "Demo pipeline";
+  return "Sample scenario pipeline";
 }
 
 /**
- * Runs recorded by the FastAPI backend (demo pipeline, uploaded-document
+ * Runs recorded by the FastAPI backend (sample pipeline, uploaded-document
  * analysis and agentic planner runs). Renders nothing while the backend is
  * offline, so the page falls back to the baked run history below it.
  */
@@ -137,7 +137,9 @@ export function LiveRuns() {
                     <td className="px-3 py-3 font-mono text-2xs text-ink-faint">
                       {(r.started_at ?? "").replace("T", " ").slice(0, 19)}
                     </td>
-                    <td className="px-3 py-3 font-mono text-ink">{r.verification_score}%</td>
+                    <td className="px-3 py-3 font-mono text-ink">
+                      {r.verification_score === null ? "n/a" : `${r.verification_score}%`}
+                    </td>
                     <td className="px-3 py-3 font-mono text-ink-muted">{r.evidence_backed || "—"}</td>
                     <td className="px-3 py-3">
                       <StatusPill tone={runTone[r.status] ?? "muted"} dot={false}>
@@ -232,12 +234,12 @@ function RunDetail({
               {f.needs_review ? (
                 <div className="mt-2 flex items-center justify-between gap-2 border-t border-line pt-2">
                   {f.review_status === "approved" ? (
-                    <span className="font-mono text-2xs text-verified">✓ Approved by engineer</span>
+                    <span className="font-mono text-2xs text-verified">✓ Approved by reviewer</span>
                   ) : f.review_status === "rejected" ? (
-                    <span className="font-mono text-2xs text-danger">✕ Rejected by engineer</span>
+                    <span className="font-mono text-2xs text-danger">✕ Rejected by reviewer</span>
                   ) : (
                     <>
-                      <span className="font-mono text-2xs text-caution">⚠ Held for engineer approval</span>
+                      <span className="font-mono text-2xs text-caution">⚠ Held for human review</span>
                       <span className="flex items-center gap-1.5">
                         <button
                           onClick={() => onReview(f.id, "approve")}

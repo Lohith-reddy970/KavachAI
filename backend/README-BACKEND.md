@@ -1,10 +1,11 @@
 # KAVACH AI - Backend
 
 Sovereign On-Premise Agentic AI Workbench - Python/FastAPI backend for the
-Smart India Hackathon 2026 prototype.
+KAVACH AI local-first document intelligence project.
 
-**Runs fully offline. No cloud AI APIs.** All inference is mock/deterministic
-local logic behind real provider interfaces. Default mode is `airgapped`.
+**Runs locally with no cloud AI APIs.** Host-based development defaults to Ollama
+with role-specific local models; set `KAVACH_INFERENCE_PROVIDER=mock` for
+deterministic model-free runs. Default mode is `airgapped`.
 
 The agents, the agentic planner loop and what is real versus mocked are
 explained in the [top-level README](../README.md).
@@ -31,9 +32,9 @@ pip install -r requirements.txt
 
 Every optional dependency is wrapped in `try/except`. If any are missing the app
 still starts and degrades gracefully (e.g. PDFs/DOCX/XLSX are skipped, RAG falls
-back to a pure-python hash embedding).
+back from Ollama embeddings to Sentence Transformers or a pure-Python hash embedding).
 
-## 2. Generate demo data (once)
+## 2. Generate the sample assets (once)
 
 From the **repo root**:
 
@@ -44,7 +45,7 @@ python demo-data/generate_demo_data.py
 Produces under `demo-data/`: `inspection_report.pdf`, `equipment_manual.pdf`,
 `engineering_calculation.pdf` (or `.txt` fallbacks if fpdf2 is absent),
 `plant_pid.png` (or `.txt` if Pillow is absent), and `sample_internal_code.py`.
-All content is **fictional** (imaginary "KAVACH DEMO REFINERY").
+All facility and inspection content is **fictional sample data**.
 
 ## 3. Run the server
 
@@ -67,7 +68,12 @@ Copy `.env.example` and adjust as needed. Key variables:
 | `KAVACH_MODE`         | `airgapped`  | `airgapped` blocks external providers|
 | `KAVACH_DB`           | `./kavach.db`| SQLite path                          |
 | `KAVACH_MAX_UPLOAD_MB`| `25`         | Upload size cap                      |
-| `KAVACH_INFERENCE_PROVIDER` | `mock` | `mock` or `ollama` (loopback only when airgapped) |
+| `KAVACH_INFERENCE_PROVIDER` | `ollama` | `ollama` or `mock` (loopback only when airgapped) |
+| `OLLAMA_REASONING_MODEL` | `qwen3:8b` | Reasoning model |
+| `OLLAMA_VISION_MODEL` | `llava:7b` | Image/P&ID model |
+| `OLLAMA_OTHER_MODEL` | `llama3.2:3b` | Other text tasks and planner choices |
+| `OLLAMA_EMBED_MODEL` | `nomic-embed-text:latest` | Local RAG embeddings |
+| `OLLAMA_TIMEOUT_S` | `120` | Per-request Ollama timeout |
 | `KAVACH_PLANNER_MAX_STEPS` | `10`    | Default planner step budget (hard cap 20) |
 | `KAVACH_REVIEW_MIN_CONFIDENCE` | `75` | Findings below this need human approval |
 
@@ -80,18 +86,19 @@ Tests: `pip install -r requirements-dev.txt && python -m pytest tests -q`.
 | Method | Path | Purpose |
 |---|---|---|
 | GET  | `/api/health` | status/mode/version |
-| GET  | `/api/system/status` | GPU/models/vector-db/ocr/sandbox/network |
+| GET  | `/api/system/status` | live GPU/CPU/RAM (labelled fallback) + models/vector-db/ocr/sandbox/network |
 | POST | `/api/documents/upload` | multipart upload (validated, path-safe) |
 | GET  | `/api/documents` | list documents |
 | GET  | `/api/documents/{id}` | document detail |
-| POST | `/api/documents/{id}/analyze` | run the pipeline on one stored document |
+| POST | `/api/documents/{id}/analyze` | analyze with a selected profile and mode |
 | POST | `/api/tasks` | create task + run agent pipeline |
 | GET  | `/api/tasks/{task_id}` | task + run |
-| POST | `/api/demo/run` | run the full judge scenario |
+| POST | `/api/demo/run` | run the fixed sample inspection scenario |
 | GET  | `/api/demo/stream` | SSE stream of pipeline steps |
 | GET  | `/api/agents/runs` | list runs |
 | GET  | `/api/agents/runs/{run_id}` | full trace (steps/findings/evidence) |
 | GET  | `/api/models` | models + routing rules + providers |
+| GET  | `/api/profiles` | document profiles + analysis modes |
 | GET  | `/api/knowledge` | KB stats + sources + sample chunks |
 | POST | `/api/knowledge/search` | RAG search (`query`, `top_k` 1-10) |
 | GET  | `/api/agent/tools` | planner tool allowlist |
@@ -114,8 +121,9 @@ app/
   agents/            security, router, document, vision, knowledge, reasoning,
                      verification, deliverable, planner + orchestrator,
                      tools (planner allowlist), review_gate (human approval)
-  models/            provider abstraction (Mock/Ollama/vLLM) + deterministic router
-  rag/               chunk + embed (hash fallback) + cosine + KnowledgeBase
+  domains/           general and industrial analysis profiles
+  models/            provider abstraction (Mock/Ollama/vLLM) + role-aware router
+  rag/               chunk + embed (Ollama Nomic / Sentence Transformers / hash fallback)
   security/          airgap guard, upload validation, mock sandbox, middleware
   services/          scenario content, knowledge KB, document analysis,
                      deliverables, seed, system status
@@ -125,16 +133,29 @@ app/
 
 **Fixed pipeline:** Security -> Router -> Document -> Vision -> Knowledge ->
 Reasoning -> Verification -> Deliverable. Each step is persisted with timestamps
-and a human-readable message. For an uploaded document the findings are
-extracted from that document's text and each quoted excerpt is re-checked
-against it.
+and a human-readable message. For an uploaded document, each analysis mode is
+driven by extracted source text and source excerpts are re-checked against it.
+
+Uploaded-document analysis accepts `profile` (`general` or `industrial`) and
+`analysis_mode` (`risk_review`, `summary`, or `extract_fields`). Risk review
+matches the selected profile's vocabulary and verifies source excerpts. Summary
+uses the local reasoning model and is advisory. Field extraction returns literal
+dates, equipment identifiers, and measurements with source citations. The
+general profile is the default; the sample refinery workflow uses the industrial
+profile.
 
 **Agentic planner (`/api/agent/run`):** the Planner agent picks the next action
 from run state, one allowlisted tool call per step, bounded by a step limit,
 loop detection and the human-review gate.
 
-**Model router (deterministic):** task text -> task_type -> model
-(Qwen3-4B / Vision Model / Code Model / Small Fast Model) with a reason string.
+**Model router (deterministic):** task text -> task_type -> configured role model
+(`qwen3:8b` reasoning / `llava:7b` vision / `llama3.2:3b` other text tasks).
+Knowledge-base embeddings use `nomic-embed-text:latest` when Ollama is active.
+
+The reasoning agent records Qwen3 output as advisory analysis, but the sample
+scenario findings remain fixture data. In risk-review mode, uploaded-text findings
+remain profile-term extracted. LLaVA responses are recorded for image inputs;
+sample P&ID bounding boxes remain fixed fixture coordinates.
 
 **Security:** airgapped mode blocks external cloud providers; uploads are
 extension-allowlisted (`pdf,png,jpg,jpeg,txt,docx,csv,py`), size-capped (25 MB)

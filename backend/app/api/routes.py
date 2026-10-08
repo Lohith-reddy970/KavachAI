@@ -14,11 +14,12 @@ from .. import config
 from ..agents import orchestrator, planner_agent
 from ..agents.tools import REGISTRY
 from ..database import db
+from ..domains.profiles import ANALYSIS_MODES, get_profile, list_profiles
 from ..models.providers import active_provider_name, all_providers
 from ..models.router import routing_rules
-from ..schemas.schemas import (AgentRunRequest, DemoRunRequest, HealthResponse,
-                               KnowledgeSearchRequest, KnowledgeSearchResponse,
-                               ReviewRequest, TaskCreate)
+from ..schemas.schemas import (AgentRunRequest, DemoRunRequest, DocumentAnalysisRequest,
+                               HealthResponse, KnowledgeSearchRequest,
+                               KnowledgeSearchResponse, ReviewRequest, TaskCreate)
 from ..security.guard import ValidationError, safe_join, validate_upload
 from ..security.middleware import write_audit
 from ..services import document_analysis
@@ -95,17 +96,24 @@ def get_document(doc_id: int):
 
 
 @router.post("/documents/{doc_id}/analyze")
-def analyze_document(doc_id: int, payload: TaskCreate):
-    """Run the local agent pipeline for one uploaded document."""
+def analyze_document(doc_id: int, payload: DocumentAnalysisRequest):
+    """Run a profile- and mode-aware analysis on one uploaded document."""
     document = db.fetch_one("SELECT * FROM documents WHERE id=?", (doc_id,))
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
+    try:
+        get_profile(payload.profile)
+    except KeyError:
+        allowed = ", ".join(item["id"] for item in list_profiles())
+        raise HTTPException(status_code=422,
+                            detail=f"Unknown profile '{payload.profile}'. Available: {allowed}.")
     text, note = document_analysis.extract_text(document["path"])
     task_text = payload.title + " " + (payload.description or "")
     task_id = db.insert("tasks", {
         "title": payload.title,
-        "description": f"Document {document['filename']}: {text[:4000]}",
-        "task_type": payload.task_type or "document_analysis",
+        "description": (f"Profile: {payload.profile}; mode: {payload.analysis_mode}\n"
+                        f"Document {document['filename']}: {text[:4000]}"),
+        "task_type": payload.task_type or payload.analysis_mode,
         "status": "running",
         "run_id": None,
         "created_at": _now(),
@@ -117,11 +125,14 @@ def analyze_document(doc_id: int, payload: TaskCreate):
         document=document,
         document_text=text,
         document_note=note,
+        profile=payload.profile,
+        analysis_mode=payload.analysis_mode,
     )
     db.execute("UPDATE tasks SET status=?, run_id=? WHERE id=?",
                ("completed", run["run"]["id"], task_id))
     write_audit("document.analyze",
                 detail=f"document {doc_id} ({document['filename']}) -> run {run['run']['id']}: "
+                       f"profile={payload.profile}, mode={payload.analysis_mode}, "
                        f"{len(run['findings'])} finding(s), status={run['run']['status']}")
     return {"task": db.fetch_one("SELECT * FROM tasks WHERE id=?", (task_id,)), "run": run}
 
@@ -236,6 +247,11 @@ def get_run(run_id: int):
 
 
 # --- Models -------------------------------------------------------------------
+@router.get("/profiles")
+def analysis_profiles():
+    return {"profiles": list_profiles(), "analysis_modes": list(ANALYSIS_MODES)}
+
+
 @router.get("/models")
 def list_models():
     models = db.fetch_all("SELECT * FROM models ORDER BY id")
@@ -284,7 +300,7 @@ def _review(finding_id: int, decision: str, payload: ReviewRequest | None):
     finding = db.fetch_one("SELECT * FROM findings WHERE id=?", (finding_id,))
     if not finding:
         raise HTTPException(status_code=404, detail="Finding not found")
-    reviewer = (payload.reviewer if payload else None) or "inspector@kavach.local"
+    reviewer = (payload.reviewer if payload else None) or "reviewer@kavach.local"
     note = (payload.note if payload else "") or ""
     db.insert("reviews", {
         "finding_id": finding_id,

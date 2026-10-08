@@ -1,7 +1,7 @@
 import { User, Shield, Bot, Cpu, Database, FileCheck2, ArrowDown } from "lucide-react";
 
 const stages = [
-  { label: "User", sub: "engineer request", icon: User, tone: "text-ink" },
+  { label: "User", sub: "document request", icon: User, tone: "text-ink" },
   { label: "KAVACH AI", sub: "security · router · planner", icon: Shield, tone: "text-signal" },
   { label: "Local Agents", sub: "8 specialised agents", icon: Bot, tone: "text-signal" },
   { label: "Local Models", sub: "open-weight, on GPU", icon: Cpu, tone: "text-signal" },

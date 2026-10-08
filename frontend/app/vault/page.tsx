@@ -9,9 +9,10 @@ import {
   SourceChip,
 } from "@/components/ui";
 import { documents as seed, formatBytes } from "@/lib/data";
-import { useLive, fetchDocuments } from "@/lib/live";
-import { api } from "@/lib/api";
+import { useLive, fetchAnalysisCatalog, fetchDocuments } from "@/lib/live";
+import { api, type AnalysisMode } from "@/lib/api";
 import type { KDocument, ProcessState } from "@/lib/types";
+import { sampleAnalysisCatalog } from "@/lib/profiles";
 import { cn } from "@/lib/utils";
 import {
   UploadCloud,
@@ -27,7 +28,10 @@ const MAX = 25 * 1024 * 1024;
 
 export default function VaultPage() {
   const { data: liveDocs, source } = useLive(fetchDocuments, seed);
+  const { data: analysisCatalog } = useLive(fetchAnalysisCatalog, sampleAnalysisCatalog);
   const [docs, setDocs] = useState<KDocument[]>(seed);
+  const [profile, setProfile] = useState("general");
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("risk_review");
   const [uploaded, setUploaded] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -164,6 +168,42 @@ export default function VaultPage() {
         </div>
       </Panel>
 
+      <Panel className="mb-3">
+        <PanelHeader title="Analysis settings" sub="Choose a domain profile and task for document analysis" />
+        <div className="grid gap-3 p-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="eyebrow mb-1 block">Domain profile</span>
+            <select
+              value={profile}
+              onChange={(e) => setProfile(e.target.value)}
+              className="w-full rounded-[3px] border border-line bg-surface-inset px-3 py-2 text-xs text-ink outline-none focus:border-signal/50"
+            >
+              {analysisCatalog.profiles.map((item) => (
+                <option key={item.id} value={item.id}>{item.name}</option>
+              ))}
+            </select>
+            <span className="mt-1 block text-2xs text-ink-faint">
+              {analysisCatalog.profiles.find((item) => item.id === profile)?.description}
+            </span>
+          </label>
+          <label className="block">
+            <span className="eyebrow mb-1 block">Analysis mode</span>
+            <select
+              value={analysisMode}
+              onChange={(e) => setAnalysisMode(e.target.value as AnalysisMode)}
+              className="w-full rounded-[3px] border border-line bg-surface-inset px-3 py-2 text-xs text-ink outline-none focus:border-signal/50"
+            >
+              {analysisCatalog.analysis_modes.map((item) => (
+                <option key={item.id} value={item.id}>{item.name}</option>
+              ))}
+            </select>
+            <span className="mt-1 block text-2xs text-ink-faint">
+              {analysisCatalog.analysis_modes.find((item) => item.id === analysisMode)?.description}
+            </span>
+          </label>
+        </div>
+      </Panel>
+
       {/* Table */}
       <Panel>
         <PanelHeader
@@ -230,15 +270,32 @@ export default function VaultPage() {
                     {/^[0-9]+$/.test(d.id) && (
                       <button
                         onClick={async () => {
-                          setNotice(`Analyzing ${d.name} locally…`);
+                          setNotice(`Analyzing ${d.name} locally. First model use can take a minute; this notice will update when finished.`);
                           try {
+                            const title = analysisMode === "risk_review"
+                              ? `Review ${d.name}`
+                              : analysisMode === "summary"
+                                ? `Summarize ${d.name}`
+                                : `Extract fields from ${d.name}`;
+                            const description = analysisMode === "risk_review"
+                              ? "Review this document for risks and support each finding with source evidence."
+                              : analysisMode === "summary"
+                                ? "Summarize the document's purpose, key points, decisions, and open questions."
+                                : "Extract dates, equipment identifiers, and measurements with exact source excerpts.";
                             const result = await api.analyzeDocument(
                               d.id,
-                              `Analyze ${d.name}`,
-                              "Review this document and identify important findings with supporting evidence.",
+                              title,
+                              description,
+                              profile,
+                              analysisMode,
                             );
+                            const outcome = analysisMode === "summary"
+                              ? "summary generated"
+                              : analysisMode === "extract_fields"
+                                ? `${result.run.findings.length} field(s) extracted`
+                                : `${result.run.findings.length} risk finding(s) recorded`;
                             setNotice(
-                              `Analysis finished: ${result.run.findings.length} finding(s). Run #${result.run.run.id} is in Agent Runs.`,
+                              `Analysis finished: ${outcome}. Run #${result.run.run.id} is in Agent Runs.`,
                             );
                           } catch (error) {
                             setNotice(

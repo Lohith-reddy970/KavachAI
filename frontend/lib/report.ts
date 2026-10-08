@@ -1,6 +1,6 @@
 import { findings, evidence, FACILITY, UNIT, getEvidence } from "./data";
 
-/** Build a plain-text engineering review report from the deterministic dataset. */
+/** Build a plain-text sample review report from the bundled data. */
 export function buildReportText(): string {
   const lines: string[] = [];
   const rule = "=".repeat(64);
@@ -14,7 +14,7 @@ export function buildReportText(): string {
     "Cross-analysis of the Unit 4 inspection report against the plant P&ID and\n" +
       "engineering documentation identified 9 findings across 6 equipment items.\n" +
       "One high-severity item (P-101 outlet wall thickness) and one unverified\n" +
-      "hypothesis require engineer review before approval. Overall verification\n" +
+      "hypothesis require reviewer attention before approval. Overall verification\n" +
       "score 94%, with 8 of 9 findings backed by retrieved source evidence.",
   );
   lines.push("");
@@ -51,7 +51,7 @@ export function buildReportText(): string {
   lines.push("  Requires human review: 1 (finding #09)");
   lines.push("");
   lines.push("HUMAN REVIEW");
-  lines.push("  AI recommends. Engineer approves. This report is a decision-support");
+  lines.push("  AI recommends. A reviewer decides. This report is a decision-support");
   lines.push("  artefact and is not an authoritative approval until signed off.");
   lines.push("");
   lines.push(rule);

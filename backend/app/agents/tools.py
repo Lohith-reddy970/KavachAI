@@ -99,7 +99,7 @@ def _human_review(ctx: RunContext, args: dict[str, Any]) -> None:
     ctx.artifacts["human_review"] = {"required": required}
     ctx.add_step(
         "human_review", "Human approval requested", status="awaiting_review",
-        detail=f"{len(required)} finding(s) held for engineer approval: "
+        detail=f"{len(required)} finding(s) held for human review: "
                + "; ".join(f"{r['title']} ({', '.join(r['reasons'])})" for r in required))
 
 

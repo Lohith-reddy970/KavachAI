@@ -2,15 +2,15 @@
 
 // Live-backend data layer.
 //
-// Design: the UI renders the baked demo dataset instantly (so it works offline
-// and the judge demo is deterministic), then — if the FastAPI backend is
+// Design: the UI renders the bundled sample dataset instantly (so it works offline
+// and remains deterministic), then — if the FastAPI backend is
 // reachable — transparently swaps in live data and flips the source to "live".
 // If the backend is down, everything stays on the curated local data. The
 // headline Workbench run stays client-driven regardless, so timing never
 // depends on the network.
 
 import { useEffect, useState } from "react";
-import { api } from "./api";
+import { api, type AnalysisCatalog } from "./api";
 import type { AuditEntry, Deliverable, KDocument } from "./types";
 
 export type Source = "mock" | "live";
@@ -75,6 +75,10 @@ export async function fetchDocuments(): Promise<KDocument[]> {
   });
 }
 
+export function fetchAnalysisCatalog(): Promise<AnalysisCatalog> {
+  return api.profiles();
+}
+
 export async function fetchAuditLogs(): Promise<AuditEntry[]> {
   const raw = await api.auditLogs();
   const arr = Array.isArray(raw) ? raw : raw.logs ?? [];
@@ -100,7 +104,7 @@ export async function fetchDeliverables(): Promise<LiveDeliverable[]> {
   return arr.map((d: any): LiveDeliverable => ({
     id: String(d.id),
     title: d.name ?? d.filename,
-    category: d.fmt === "xlsx" ? "Excel Analysis" : d.fmt === "docx" ? "Approval Note" : "Engineering Report",
+    category: d.fmt === "xlsx" ? "Excel Analysis" : d.fmt === "docx" ? "Review Note" : "Document Analysis Report",
     format: (d.fmt ?? "txt").toUpperCase(),
     project: "Unit 4 Inspection",
     createdAt: (d.created_at ?? "").replace("T", " ").slice(0, 16),
@@ -113,11 +117,23 @@ export async function fetchDeliverables(): Promise<LiveDeliverable[]> {
   }));
 }
 
+export type MetricSource = "hardware" | "simulated" | "unavailable";
+
 export interface LiveSystem {
   gpu: number;
   vramUsedPct: number;
+  gpuName?: string;
+  vramUsedGb?: number;
+  vramTotalGb?: number;
+  gpuTempC?: number;
+  cpuPct: number | null;
+  ramPct: number | null;
+  gpuSource: MetricSource;
   services: { name: string; detail: string; status: string }[];
 }
+
+const metric = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
 
 export async function fetchSystem(): Promise<LiveSystem> {
   const s = await api.systemStatus();
@@ -128,9 +144,42 @@ export async function fetchSystem(): Promise<LiveSystem> {
     { name: "Sandbox", detail: s.sandbox?.network ?? "isolated", status: s.sandbox?.status ?? "ISOLATED" },
     { name: "Network", detail: "egress off", status: "AIR-GAPPED" },
   ];
+  const vramUsed = metric(s.gpu?.memory_used_gb);
+  const vramTotal = metric(s.gpu?.memory_total_gb);
   return {
-    gpu: Math.round(s.gpu?.utilization_pct ?? 0),
-    vramUsedPct: Math.round(s.gpu?.memory_used_pct ?? 0),
+    gpu: Math.round(metric(s.gpu?.utilization_pct) ?? 0),
+    vramUsedPct: Math.round(metric(s.gpu?.memory_used_pct) ?? 0),
+    gpuName: typeof s.gpu?.device === "string" ? s.gpu.device : undefined,
+    vramUsedGb: vramUsed ?? undefined,
+    vramTotalGb: vramTotal ?? undefined,
+    gpuTempC: metric(s.gpu?.temperature_c) ?? undefined,
+    cpuPct: metric(s.cpu?.utilization_pct),
+    ramPct: metric(s.ram?.utilization_pct),
+    gpuSource: s.gpu?.source === "hardware" ? "hardware" : "simulated",
     services,
   };
+}
+
+/** Polls the local backend for live system metrics; returns null when offline. */
+export function usePolledSystem(intervalMs = 5000) {
+  const [data, setData] = useState<LiveSystem | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const load = () => {
+      fetchSystem()
+        .then((value) => {
+          if (alive) setData(value);
+        })
+        .catch(() => {
+          if (alive) setData(null);
+        });
+    };
+    load();
+    const id = setInterval(load, intervalMs);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [intervalMs]);
+  return data;
 }

@@ -73,12 +73,12 @@ class PlannerAgent:
     def _llm_choice(self, ctx: RunContext, options: list[PlannerDecision]) -> PlannerDecision:
         names = [o.action for o in options]
         prompt = (
-            "You are a planner for an industrial inspection assistant.\n"
+            "You are a planner for a local document analysis assistant.\n"
             f"Task: {ctx.task_text[:MAX_QUERY_CHARS]}\n"
             f"Choose the single best next action from: {', '.join(names)}.\n"
             "Reply with only the action name."
         )
-        result = generate_with_fallback(prompt)
+        result = generate_with_fallback(prompt, role="other")
         if result.provider != DEFAULT_PROVIDER:
             reply = result.text.lower()
             picked = [o for o in options if o.action in reply]

@@ -17,8 +17,9 @@ def _upload(client, name: str, content: bytes) -> dict:
     return res.json()
 
 
-def _analyze(client, doc_id: int) -> dict:
-    res = client.post(f"/api/documents/{doc_id}/analyze", json={"title": "Review for defects"})
+def _analyze(client, doc_id: int, **options) -> dict:
+    payload = {"title": "Review for defects", **options}
+    res = client.post(f"/api/documents/{doc_id}/analyze", json=payload)
     assert res.status_code == 200, res.text
     return res.json()["run"]
 
@@ -60,11 +61,11 @@ def test_same_filename_uploads_do_not_overwrite(client):
     assert open(first["path"], "rb").read() == b"first"
 
 
-def test_seeded_demo_pdf_is_read_by_file_extension(client):
+def test_seeded_industrial_profile_reads_sample_pdf_by_extension(client):
     # Seeded documents store a category ("report") in doc_type, not "pdf".
     doc = next(d for d in client.get("/api/documents").json()
                if d["filename"] == "inspection_report.pdf")
-    run = _analyze(client, doc["id"])
+    run = _analyze(client, doc["id"], profile="industrial")
     assert run["findings"], [s["detail"] for s in run["steps"]]
     assert all(ev["source"] == "inspection_report.pdf"
                for f in run["findings"] for ev in f["evidence"])
@@ -72,6 +73,85 @@ def test_seeded_demo_pdf_is_read_by_file_extension(client):
 
 def test_analyze_unknown_document_is_404(client):
     assert client.post("/api/documents/999999/analyze", json={"title": "x"}).status_code == 404
+
+
+def test_profile_catalog_is_available(client):
+    catalog = client.get("/api/profiles").json()
+    assert {profile["id"] for profile in catalog["profiles"]} == {"general", "industrial"}
+    assert {mode["id"] for mode in catalog["analysis_modes"]} == {
+        "risk_review", "summary", "extract_fields",
+    }
+
+
+def test_profiles_apply_different_risk_terms():
+    text = "Corrosion was observed on the pipe and requires repair."
+    general = document_analysis.find_findings(text, "report.txt", "general")
+    industrial = document_analysis.find_findings(text, "report.txt", "industrial")
+    assert general == []
+    assert industrial and "corro" in industrial[0]["description"]
+
+
+def test_summary_mode_records_summary_without_risk_findings(client):
+    doc = _upload(client, "summary.txt", b"The project started in 2024. It has three open actions.")
+    run = _analyze(client, doc["id"], analysis_mode="summary")
+    assert run["findings"] == []
+    assert run["run"]["verification_score"] is None
+    summary_step = next(s for s in run["steps"] if s["message"] == "Document summary generated")
+    assert "mode=summary" in summary_step["detail"]
+    assert any(s["status"] == "skipped" for s in run["steps"])
+    report = next(d for d in run["deliverables"] if d["fmt"] == "md")
+    report_text = open(report["path"], encoding="utf-8").read()
+    assert "Document Summary" in report_text
+    assert "Not applicable: summary mode does not create findings to verify." in report_text
+
+
+def test_extract_fields_mode_returns_source_cited_values(client):
+    content = b"Inspection date: 2026-04-12. Equipment K-220 measured 6.8 mm at 14 bar."
+    doc = _upload(client, "fields.txt", content)
+    run = _analyze(client, doc["id"], analysis_mode="extract_fields")
+    titles = " | ".join(f["title"] for f in run["findings"])
+    assert "2026-04-12" in titles
+    assert "K-220" in titles
+    assert "6.8 mm" in titles
+    assert all(f["evidence"][0]["excerpt"] in content.decode() for f in run["findings"])
+
+
+def test_analyze_rejects_unknown_profile_and_mode(client):
+    doc = _upload(client, "profile.txt", b"A routine note with no findings.")
+    unknown_profile = client.post(
+        f"/api/documents/{doc['id']}/analyze",
+        json={"title": "Review", "profile": "unknown"},
+    )
+    unknown_mode = client.post(
+        f"/api/documents/{doc['id']}/analyze",
+        json={"title": "Review", "analysis_mode": "compare"},
+    )
+    assert unknown_profile.status_code == 422
+    assert unknown_mode.status_code == 422
+
+
+def test_image_risk_review_returns_guidance_without_model_inference(client):
+    doc = _upload(client, "diagram.png", b"\x89PNG\r\n\x1a\nnot-really-an-image")
+    run = _analyze(client, doc["id"])
+    assert run["findings"] == []
+    assert run["run"]["status"] == "completed"
+    statuses = {s["agent"]: s["status"] for s in run["steps"]}
+    assert statuses["vision_agent"] == "skipped"
+    assert statuses["knowledge_agent"] == "skipped"
+    reasoning = next(s for s in run["steps"] if s["agent"] == "reasoning_agent")
+    assert reasoning["status"] == "warning"
+    assert "requires extracted text" in reasoning["message"]
+    assert "summary" in reasoning["detail"].lower()
+
+
+def test_image_summary_uses_vision_output(client):
+    doc = _upload(client, "diagram.png", b"\x89PNG\r\n\x1a\nsample-image")
+    run = _analyze(client, doc["id"], analysis_mode="summary")
+    messages = [s["message"] for s in run["steps"]]
+    assert "Uploaded image analysis completed" in messages
+    assert "Visual summary captured" in messages
+    assert run["findings"] == []
+    assert run["run"]["verification_score"] is None
 
 
 def test_verification_catches_an_excerpt_that_is_not_in_the_document():

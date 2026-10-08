@@ -1,0 +1,36 @@
+KAVACH AI - Document Analysis Report
+Source document: inspection_report.pdf
+Generated: 2026-10-08T19:40:30.758739+00:00 | Mode: airgapped
+Run ID: 9
+Profile: General documents | Analysis: Risk review
+
+LOCAL ANALYSIS OUTPUT - REVIEW BEFORE OPERATIONAL USE
+================================================================
+
+1. EXECUTIVE SUMMARY
+   Verification score: 100.0%
+   Evidence-backed: 1/1
+   Model routing: llama3.2:3b (code)
+
+2. FINDINGS
+   1. [LOW] Recommend follow-up ultrasonic thickness survey within 90 days.
+      Equipment:  | Confidence: 80.0%
+      Matched risk terms: recommend, follow-up. Recommend follow-up ultrasonic thickness survey within 90 days.
+      - Evidence: inspection_report.pdf (p.1) [80.0%]
+        "Recommend follow-up ultrasonic thickness survey within 90 days."
+
+3. VERIFICATION
+   Score: 100.0% | Evidence-backed: 1/1
+   Findings flagged for review: none
+
+4. PIPELINE TRACE
+   - [security_agent] Security perimeter verified
+   - [router_agent] Task routed to llama3.2:3b
+   - [router_agent] Execution plan created
+   - [document_agent] Uploaded document loaded
+   - [document_agent] Document analysis prepared
+   - [vision_agent] Vision analysis skipped
+   - [knowledge_agent] Knowledge retrieved
+   - [reasoning_agent] Reasoning analysis captured
+   - [reasoning_agent] Profile-based risk review completed
+   - [verification_agent] Evidence cross-check completed

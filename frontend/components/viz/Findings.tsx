@@ -123,11 +123,11 @@ export function FindingCard({ finding, showReview = false }: { finding: Finding;
       {showReview && (state === "needs-review" || state === "approved" || state === "rejected") && (
         <div className="mt-3 flex items-center justify-between gap-2 border-t border-line pt-3">
           {state === "approved" ? (
-            <span className="font-mono text-2xs text-verified">✓ Approved by engineer</span>
+            <span className="font-mono text-2xs text-verified">✓ Approved by reviewer</span>
           ) : state === "rejected" ? (
-            <span className="font-mono text-2xs text-danger">✕ Rejected by engineer</span>
+            <span className="font-mono text-2xs text-danger">✕ Rejected by reviewer</span>
           ) : (
-            <span className="font-mono text-2xs text-caution">⚠ Human review required — AI recommends, engineer approves</span>
+            <span className="font-mono text-2xs text-caution">⚠ Human review required — AI recommends, reviewer decides</span>
           )}
           <div className="flex items-center gap-1.5">
             <button

@@ -20,7 +20,17 @@ class KnowledgeAgent(BaseAgent):
             # Index the uploaded text in a throwaway per-run index and retrieve
             # the passages most relevant to the task.
             doc_kb = KnowledgeBase()
-            pages = ctx.artifacts.get("document_text", "").split(PAGE_BREAK)
+            document_text = ctx.artifacts.get("document_text", "")
+            if not document_text.strip():
+                ctx.artifacts["retrieved"] = []
+                ctx.add_step(
+                    self.name,
+                    "No text to index",
+                    status="skipped",
+                    detail=ctx.artifacts.get("document_note", "No text was extracted from this file."),
+                )
+                return ctx
+            pages = document_text.split(PAGE_BREAK)
             chunks = sum(doc_kb.add(page, source=uploaded["filename"], page=n)
                          for n, page in enumerate(pages, start=1))
             hits = [h for h in doc_kb.search(ctx.task_text, top_k=4) if h["score"] > 0]

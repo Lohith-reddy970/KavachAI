@@ -1,8 +1,8 @@
 // Optional live-backend client.
 //
-// The UI runs standalone on the baked mock-data layer (lib/data.ts) so the
-// judge demo always works offline. When the FastAPI backend is running, these
-// helpers let the same components read live endpoints instead — the contract
+// The UI runs standalone on the bundled sample data (lib/data.ts). When the
+// FastAPI backend is running, these helpers let the same components read live
+// endpoints instead — the contract
 // (paths + shapes) is identical, so swapping the source is a one-line change.
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
@@ -28,11 +28,24 @@ export interface KnowledgeSearchResponse {
   embedding_backend: string;
 }
 
+export type AnalysisMode = "risk_review" | "summary" | "extract_fields";
+
+export interface AnalysisProfile {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface AnalysisCatalog {
+  profiles: AnalysisProfile[];
+  analysis_modes: { id: AnalysisMode; name: string; description: string }[];
+}
+
 export interface LiveRun {
   id: number;
   scenario: string | null;
   status: string; // running | completed | awaiting_review | halted | error
-  verification_score: number;
+  verification_score: number | null;
   evidence_backed: string;
   started_at: string;
 }
@@ -80,6 +93,11 @@ async function request<T>(path: string, init: RequestInit = {}, timeoutMs = 2500
     const res = await fetch(`${BASE}${path}`, { ...init, signal: ctrl.signal, cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as T;
+  } catch (error) {
+    if (ctrl.signal.aborted) {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)} seconds; a local model may still be processing.`);
+    }
+    throw error;
   } finally {
     clearTimeout(t);
   }
@@ -100,13 +118,14 @@ export const api = {
   systemStatus: () => get<any>("/api/system/status"),
   documents: () => get<any>("/api/documents"),
   models: () => get<any>("/api/models"),
+  profiles: () => get<AnalysisCatalog>("/api/profiles"),
   knowledge: () => get<any>("/api/knowledge"),
   searchKnowledge: (query: string, topK = 4) =>
     post<KnowledgeSearchResponse>("/api/knowledge/search", { query, top_k: topK }),
   runs: () => get<LiveRun[]>("/api/agents/runs"),
   run: (id: number) => get<LiveRunDetail>(`/api/agents/runs/${id}`, 10000),
-  // The planner loop runs synchronously on the backend, so allow it more time.
-  agentRun: (task: string) => post<AgentRunResponse>("/api/agent/run", { task }, 60000),
+  // The planner can load/switch several local models during one synchronous run.
+  agentRun: (task: string) => post<AgentRunResponse>("/api/agent/run", { task }, 600000),
   reviewFinding: (findingId: number, decision: "approve" | "reject") =>
     post<unknown>(`/api/review/${findingId}/${decision}`, {}, 10000),
   auditLogs: () => get<any>("/api/audit-logs"),
@@ -121,13 +140,38 @@ export const api = {
       return r.json();
     });
   },
-  analyzeDocument: (id: string | number, title: string, description = "") =>
-    fetch(`${BASE}/api/documents/${id}/analyze`, {
+  analyzeDocument: (
+    id: string | number,
+    title: string,
+    description = "",
+    profile = "general",
+    analysisMode: AnalysisMode = "risk_review",
+  ) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 300000);
+    return fetch(`${BASE}/api/documents/${id}/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description }),
-    }).then((r) => {
-      if (!r.ok) throw new Error(`Analysis failed (${r.status})`);
-      return r.json();
-    }),
+      body: JSON.stringify({ title, description, profile, analysis_mode: analysisMode }),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (response.ok) return response.json();
+        const body = await response.json().catch(() => null);
+        const detail = body?.detail;
+        const message = typeof detail === "string"
+          ? detail
+          : Array.isArray(detail)
+            ? detail.map((item: { msg?: string }) => item.msg ?? "Invalid request").join("; ")
+            : `Analysis failed (${response.status})`;
+        throw new Error(message);
+      })
+      .catch((error) => {
+        if (controller.signal.aborted) {
+          throw new Error("Analysis timed out after 5 minutes. The backend may still finish; check Agent Runs before retrying.");
+        }
+        throw error;
+      })
+      .finally(() => clearTimeout(timeout));
+  },
 };

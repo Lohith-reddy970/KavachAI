@@ -1,36 +1,56 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Panel, PanelHeader, PageTitle, StatusPill, Meter, SourceChip } from "@/components/ui";
+import { Panel, PanelHeader, PageTitle, StatusPill, Meter } from "@/components/ui";
 import { BackendStatus } from "@/components/viz/BackendStatus";
 import { systemStatus } from "@/lib/data";
-import { useLive, fetchSystem } from "@/lib/live";
-import { clamp } from "@/lib/utils";
-import { Cpu, MemoryStick, Server, Gauge, Activity, ShieldCheck } from "lucide-react";
+import { usePolledSystem } from "@/lib/live";
+import { Cpu, MemoryStick, Server, Gauge, ShieldCheck } from "lucide-react";
 
 export default function SystemPage() {
-  const [gpu, setGpu] = useState(systemStatus.gpu);
-  const [cpu, setCpu] = useState(systemStatus.cpu);
-  const [ram, setRam] = useState(systemStatus.ram);
-  const [spark, setSpark] = useState<number[]>(Array.from({ length: 40 }, (_, i) => 60 + Math.sin(i / 3) * 12));
-  const { data: live, source } = useLive(fetchSystem, {
-    gpu: systemStatus.gpu,
-    vramUsedPct: 44,
-    services: systemStatus.services.map((s) => ({ name: s.name, detail: s.detail, status: s.status })),
-  });
-  const services = live.services;
+  const live = usePolledSystem(5000);
+  const [history, setHistory] = useState<number[]>([]);
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setGpu((g) => clamp(g + (Math.random() * 8 - 4), 62, 92));
-      setCpu((c) => clamp(c + (Math.random() * 6 - 3), 22, 55));
-      setRam((r) => clamp(r + (Math.random() * 4 - 2), 55, 74));
-      setSpark((s) => [...s.slice(1), clamp(s[s.length - 1] + (Math.random() * 16 - 8), 40, 95)]);
-    }, 1200);
-    return () => clearInterval(id);
-  }, []);
+    if (live) setHistory((prev) => [...prev.slice(-39), live.gpu]);
+  }, [live]);
 
-  const vramUsed = ((gpu / 100) * systemStatus.vramTotal).toFixed(1);
+  const hardware = live?.gpuSource === "hardware";
+  const gpu = live?.gpu ?? systemStatus.gpu;
+  const cpu = live ? live.cpuPct : systemStatus.cpu;
+  const ram = live ? live.ramPct : systemStatus.ram;
+  const gpuName = live?.gpuName ?? "Sample hardware profile (backend offline)";
+  const vramUsed = live ? live.vramUsedGb ?? null : systemStatus.vramUsed;
+  const vramTotal = live ? live.vramTotalGb ?? null : systemStatus.vramTotal;
+  const vramLabel =
+    vramUsed != null && vramTotal != null
+      ? `${vramUsed.toFixed(1)} / ${vramTotal.toFixed(0)} GB`
+      : "—";
+  const vramPct = vramUsed != null && vramTotal ? (vramUsed / vramTotal) * 100 : 0;
+  const spark = history.length >= 2 ? history : Array.from({ length: 40 }, () => gpu);
+  const services =
+    live?.services ??
+    systemStatus.services.map((s) => ({ name: s.name, detail: s.detail, status: s.status }));
+
+  const sourcePill = hardware ? (
+    <StatusPill tone="verified" pulse>
+      Live Hardware
+    </StatusPill>
+  ) : live ? (
+    <StatusPill tone="caution" dot={false}>
+      Simulated Fallback
+    </StatusPill>
+  ) : (
+    <StatusPill tone="info" dot={false}>
+      Bundled Sample
+    </StatusPill>
+  );
+
+  const sourceNote = hardware
+    ? "Live metrics read locally via nvidia-smi (GPU) and psutil (CPU/RAM)."
+    : live
+      ? "Local GPU/CPU metrics are unavailable on this host; the values shown are simulated, not measured."
+      : "Backend offline; showing bundled sample values.";
 
   return (
     <div>
@@ -41,20 +61,32 @@ export default function SystemPage() {
       <div className="grid gap-3 lg:grid-cols-3">
         {/* GPU */}
         <Panel className="lg:col-span-2">
-          <PanelHeader title="Local GPU" sub={systemStatus.gpuModel} icon={<Gauge className="h-4 w-4" />} right={<span className="font-mono text-2xs text-signal">{gpu.toFixed(0)}% util</span>} />
+          <PanelHeader
+            title="Local GPU"
+            sub={gpuName}
+            icon={<Gauge className="h-4 w-4" />}
+            right={
+              <span className="flex items-center gap-3">
+                {sourcePill}
+                <span className="font-mono text-2xs text-signal">
+                  {gpu}% util{live?.gpuTempC != null ? ` · ${live.gpuTempC}°C` : ""}
+                </span>
+              </span>
+            }
+          />
           <div className="p-4">
             {/* sparkline */}
             <svg viewBox="0 0 200 44" className="mb-4 h-16 w-full" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="sp" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3DD4C0" stopOpacity="0.35" />
-                  <stop offset="100%" stopColor="#3DD4C0" stopOpacity="0" />
+                  <stop offset="0%" stopColor="#c94f30" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#c94f30" stopOpacity="0" />
                 </linearGradient>
               </defs>
               <polyline
                 points={spark.map((v, i) => `${(i / (spark.length - 1)) * 200},${44 - (v / 100) * 44}`).join(" ")}
                 fill="none"
-                stroke="#3DD4C0"
+                stroke="#c94f30"
                 strokeWidth="1.5"
               />
               <polygon
@@ -70,10 +102,11 @@ export default function SystemPage() {
             <div className="mt-4 rounded-[3px] border border-line bg-surface-inset px-3 py-2">
               <div className="mb-1 flex items-center justify-between font-mono text-2xs text-ink-muted">
                 <span>VRAM (model weights + KV cache)</span>
-                <span className="text-ink">{vramUsed} / {systemStatus.vramTotal} GB</span>
+                <span className="text-ink">{vramLabel}</span>
               </div>
-              <Meter value={(Number(vramUsed) / systemStatus.vramTotal) * 100} />
+              <Meter value={vramPct} />
             </div>
+            <p className="mt-3 font-mono text-2xs text-ink-faint">{sourceNote}</p>
           </div>
         </Panel>
 
@@ -82,7 +115,7 @@ export default function SystemPage() {
           <PanelHeader
             title="Services"
             icon={<Server className="h-4 w-4" />}
-            right={<SourceChip source={source} />}
+            right={sourcePill}
           />
           <ul className="divide-y divide-line">
             {services.map((s) => (
@@ -110,14 +143,16 @@ export default function SystemPage() {
 
       {/* deployment note */}
       <Panel className="mt-3">
-        <PanelHeader title="Deployment" sub="This is a demonstration prototype" icon={<ShieldCheck className="h-4 w-4" />} />
+        <PanelHeader title="Deployment" sub="Local-first software project" icon={<ShieldCheck className="h-4 w-4" />} />
         <div className="grid gap-4 p-4 md:grid-cols-2">
           <div>
             <div className="eyebrow mb-2">Inference Mode</div>
             <p className="text-xs leading-relaxed text-ink-muted">
-              The prototype ships with a <span className="text-signal">Mock Local Inference</span> provider so the full
-              workflow runs deterministically with no GPU. The provider interface (<span className="font-mono text-ink">generate · analyze_image · embed · health_check</span>)
-              is drop-in replaceable with Ollama, llama.cpp or vLLM adapters — nothing above the provider layer changes.
+              Host development defaults to <span className="text-signal">local Ollama</span> models
+              (<span className="font-mono text-ink">qwen3:8b · llava:7b · llama3.2:3b</span>). Set{" "}
+              <span className="font-mono text-ink">KAVACH_INFERENCE_PROVIDER=mock</span> for
+              deterministic model-free runs. The provider interface is drop-in replaceable with
+              llama.cpp or vLLM adapters — nothing above the provider layer changes.
             </p>
           </div>
           <div>
@@ -135,7 +170,17 @@ export default function SystemPage() {
   );
 }
 
-function Gauge2({ label, value, unit, icon }: { label: string; value: number; unit: string; icon: React.ReactNode }) {
+function Gauge2({
+  label,
+  value,
+  unit,
+  icon,
+}: {
+  label: string;
+  value: number | null;
+  unit: string;
+  icon: React.ReactNode;
+}) {
   return (
     <div className="rounded-[3px] border border-line bg-surface-inset p-3">
       <div className="mb-2 flex items-center justify-between">
@@ -143,10 +188,10 @@ function Gauge2({ label, value, unit, icon }: { label: string; value: number; un
         <span className="text-signal">{icon}</span>
       </div>
       <div className="mb-2 font-display text-2xl font-bold text-ink">
-        {value.toFixed(0)}
-        <span className="text-sm text-ink-muted">{unit}</span>
+        {value === null ? "—" : value.toFixed(0)}
+        {value === null ? null : <span className="text-sm text-ink-muted">{unit}</span>}
       </div>
-      <Meter value={value} tone={value > 85 ? "caution" : "signal"} />
+      <Meter value={value ?? 0} tone={(value ?? 0) > 85 ? "caution" : "signal"} />
     </div>
   );
 }

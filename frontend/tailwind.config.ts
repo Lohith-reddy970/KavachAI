@@ -1,8 +1,9 @@
 import type { Config } from "tailwindcss";
 
+const color = (token: string) => `rgb(var(--${token}) / <alpha-value>)`;
+
 /**
- * KAVACH AI — "Neon Control Room" design tokens.
- * Deep indigo surfaces with bright aqua, lime, orange, and cobalt signals.
+ * KAVACH AI — field-manual palette: drafting paper, machine ink, and safety oxide.
  */
 const config: Config = {
   content: [
@@ -13,34 +14,44 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        canvas: "#ffffff",
+        canvas: color("canvas"),
         surface: {
-          DEFAULT: "#ffffff",
-          raised: "#fafafa",
-          inset: "#f3f4f6",
+          DEFAULT: color("surface"),
+          raised: color("surface-raised"),
+          inset: color("surface-inset"),
         },
         line: {
-          DEFAULT: "#d8e3ef",
-          strong: "#afc1d6",
+          DEFAULT: color("line"),
+          strong: color("line-strong"),
         },
         ink: {
-          DEFAULT: "#15233b",
-          muted: "#52647d",
-          faint: "#7d8da4",
+          DEFAULT: color("ink"),
+          muted: color("ink-muted"),
+          faint: color("ink-faint"),
         },
         signal: {
-          DEFAULT: "#078c94",
-          dim: "#0b6870",
-          glow: "#2ccbd0",
+          DEFAULT: color("signal"),
+          dim: color("signal-dim"),
+          glow: color("signal-glow"),
         },
-        caution: "#bd7000",
-        danger: "#d94747",
-        verified: "#5d8f00",
-        info: "#1769c2",
+        caution: color("caution"),
+        danger: color("danger"),
+        verified: color("verified"),
+        info: color("info"),
+        rail: {
+          DEFAULT: color("rail"),
+          raised: color("rail-raised"),
+          line: color("rail-line"),
+          ink: color("rail-ink"),
+          muted: color("rail-muted"),
+          faint: color("rail-faint"),
+          accent: color("rail-accent"),
+          meter: color("rail-meter"),
+        },
       },
       fontFamily: {
-        display: ["var(--font-display)", "system-ui", "sans-serif"],
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "sans-serif"],
+        sans: ["var(--font-sans)", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       fontSize: {
@@ -48,11 +59,11 @@ const config: Config = {
       },
       boxShadow: {
         panel:
-          "0 1px 0 0 rgba(255,255,255,0.9) inset, 0 12px 28px -18px rgba(38,65,96,0.3)",
-        glow: "0 0 0 1px rgba(7,140,148,0.3), 0 0 22px -8px rgba(7,140,148,0.35)",
+          "0 1px 0 0 rgba(255,255,255,0.78) inset, 0 14px 30px -20px rgb(var(--ink) / 0.32)",
+        glow: "0 0 0 1px rgb(var(--signal) / 0.45), 0 7px 22px -12px rgb(var(--signal) / 0.55)",
       },
       backgroundImage: {
-        grid: "linear-gradient(rgba(7,140,148,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(23,105,194,0.09) 1px, transparent 1px)",
+        grid: "linear-gradient(rgb(var(--ink) / 0.09) 1px, transparent 1px), linear-gradient(90deg, rgb(var(--ink) / 0.075) 1px, transparent 1px)",
       },
       keyframes: {
         pulseline: {
@@ -75,6 +86,10 @@ const config: Config = {
           "0%": { opacity: "0", transform: "translateY(4px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
+        pageIn: {
+          "0%": { opacity: "0", transform: "translateY(12px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         pulseline: "pulseline 2.2s cubic-bezier(0.4,0,0.2,1) infinite",
@@ -82,6 +97,7 @@ const config: Config = {
         flow: "flow 1s linear infinite",
         sweep: "sweep 3.5s linear infinite",
         fadein: "fadein 0.35s ease-out both",
+        pageIn: "pageIn 0.55s cubic-bezier(0.2,0.75,0.25,1) both",
       },
     },
   },

@@ -29,7 +29,7 @@ export interface KModel {
   params: string;
   quant: string;
   status: "READY" | "LOADING" | "OFFLINE";
-  vramGb: number;
+  sizeGb: number;
   ctx: string;
   tokensPerSec: number;
 }
