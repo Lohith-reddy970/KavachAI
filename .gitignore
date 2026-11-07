@@ -5,6 +5,7 @@ out/
 npm-debug.log*
 .env
 .env.local
+backend/.env.sandbox
 
 # Python
 __pycache__/
@@ -16,6 +17,13 @@ venv/
 
 # KAVACH runtime artifacts
 backend/kavach.db
+backend/kavach.db-*
+data/
+generated/*
+!generated/.gitkeep
+.test-tmp*/
+tmp/
+mentor-testing/results/*/runtime/
 demo-data/uploads/*
 !demo-data/uploads/.gitkeep
 

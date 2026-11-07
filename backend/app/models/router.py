@@ -2,8 +2,7 @@
 
 Maps free-text task descriptions to a ``task_type`` and selects the most
 appropriate local model, returning a human-readable reason. The classification is
-keyword-driven and fully deterministic (no ML at inference time) so demos are
-reproducible.
+keyword-driven and deterministic.
 
 Model catalog:
     * qwen3:8b            - general reasoning / evidence synthesis
@@ -24,6 +23,14 @@ _TYPE_TO_MODEL = {
     "extraction": config.OLLAMA_OTHER_MODEL,
     "reasoning": config.OLLAMA_REASONING_MODEL,
 }
+
+
+def _model_for_type(task_type: str) -> str:
+    if config.INFERENCE_PROVIDER == "transformers":
+        if task_type == "vision":
+            return "unsupported (text-only Transformers provider)"
+        return config.TRANSFORMERS_MODEL_PATH or "Transformers model not configured"
+    return _TYPE_TO_MODEL.get(task_type, config.OLLAMA_REASONING_MODEL)
 
 # Keyword signals for classification (checked in priority order).
 _SIGNALS: list[tuple[str, tuple[str, ...]]] = [
@@ -58,13 +65,13 @@ def classify(task_text: str) -> str:
 def route(task_text: str) -> RoutingDecision:
     """Classify the task and select the target model with a reason string."""
     task_type = classify(task_text)
-    model = _TYPE_TO_MODEL.get(task_type, config.OLLAMA_REASONING_MODEL)
+    model = _model_for_type(task_type)
     reasons = {
-        "vision": f"Detected visual/P&ID content; routing to {config.OLLAMA_VISION_MODEL}.",
-        "code": f"Detected source-code intent; routing to {config.OLLAMA_OTHER_MODEL}.",
-        "extraction": f"Detected structured extraction; routing to {config.OLLAMA_OTHER_MODEL}.",
-        "classification": f"Detected classification/triage; routing to {config.OLLAMA_OTHER_MODEL}.",
-        "reasoning": f"General analytical task; routing to {config.OLLAMA_REASONING_MODEL}.",
+        "vision": f"Detected visual/P&ID content; routing to {model}.",
+        "code": f"Detected source-code intent; routing to {model}.",
+        "extraction": f"Detected structured extraction; routing to {model}.",
+        "classification": f"Detected classification/triage; routing to {model}.",
+        "reasoning": f"General analytical task; routing to {model}.",
     }
     # Deterministic confidence banding by type.
     confidence = {
@@ -81,6 +88,20 @@ def route(task_text: str) -> RoutingDecision:
 
 def routing_rules() -> list[dict]:
     """Describe the configured local model routing for the /api/models endpoint."""
+    if config.INFERENCE_PROVIDER == "transformers":
+        text_model = config.TRANSFORMERS_MODEL_PATH or "Transformers model not configured"
+        return [
+            {"task_type": "reasoning", "model": text_model,
+             "when": "Local Transformers text analysis and summaries"},
+            {"task_type": "vision", "model": "unsupported (text-only Transformers provider)",
+             "when": "Images need a vision-capable provider"},
+            {"task_type": "code", "model": text_model,
+             "when": "Source-code review and vulnerability scanning"},
+            {"task_type": "extraction", "model": text_model,
+             "when": "Field/table extraction from documents"},
+            {"task_type": "classification", "model": text_model,
+             "when": "Fast classification and task triage"},
+        ]
     return [
         {"task_type": "reasoning", "model": config.OLLAMA_REASONING_MODEL,
          "when": "General text analysis, findings, report reasoning"},

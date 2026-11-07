@@ -1,0 +1,7 @@
+CONTROLLED ACCEPTANCE TEST INPUT
+Test project record, not a real purchase.
+Reference: PRJ-2026-103
+Date: 2026-11-06
+Budget: INR 4800
+Owner: Test Coordinator
+Contact: planner@example.org

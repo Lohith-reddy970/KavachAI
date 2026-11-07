@@ -6,7 +6,6 @@ and stores the retrieved chunks for the reasoning agent.
 from __future__ import annotations
 
 from ..rag.pipeline import KnowledgeBase
-from ..services import knowledge as knowledge_service
 from ..services.document_analysis import PAGE_BREAK
 from .base import BaseAgent, RunContext
 
@@ -40,16 +39,4 @@ class KnowledgeAgent(BaseAgent):
                                 f"{len(hits)} relevant to the task.")
             return ctx
 
-        kb = knowledge_service.get_kb()
-        queries = ["corrosion P-101 outlet wall thickness",
-                   "control valve V-204 actuator packing",
-                   "HX-301 fouling factor"]
-        retrieved = []
-        for q in queries:
-            hits = kb.search(q, top_k=2)
-            retrieved.extend(hits)
-        ctx.artifacts["retrieved"] = retrieved
-        ctx.add_step(self.name, "Knowledge retrieved",
-                     detail=f"Retrieved {len(retrieved)} chunks across "
-                            f"{len(queries)} equipment queries from the local vector DB.")
-        return ctx
+        raise ValueError("A stored document is required.")

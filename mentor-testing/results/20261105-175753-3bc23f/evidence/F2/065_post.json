@@ -1,0 +1,15 @@
+{
+  "at": "2026-11-05T17:58:45.046776+00:00",
+  "method": "POST",
+  "path": "/api/analysis/jobs",
+  "request": {
+    "document_id": 2147483647,
+    "title": "Analyze a missing source",
+    "analysis_mode": "extract_fields"
+  },
+  "http_status": 404,
+  "elapsed_ms": 9,
+  "response": {
+    "detail": "Document not found"
+  }
+}

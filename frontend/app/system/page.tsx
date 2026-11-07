@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Panel, PanelHeader, PageTitle, StatusPill, Meter } from "@/components/ui";
 import { BackendStatus } from "@/components/viz/BackendStatus";
-import { systemStatus } from "@/lib/data";
 import { usePolledSystem } from "@/lib/live";
 import { Cpu, MemoryStick, Server, Gauge, ShieldCheck } from "lucide-react";
 
@@ -12,45 +11,26 @@ export default function SystemPage() {
   const [history, setHistory] = useState<number[]>([]);
 
   useEffect(() => {
-    if (live) setHistory((prev) => [...prev.slice(-39), live.gpu]);
+    if (live?.gpu != null) setHistory((prev) => [...prev.slice(-39), live.gpu!]);
+    else setHistory([]);
   }, [live]);
 
   const hardware = live?.gpuSource === "hardware";
-  const gpu = live?.gpu ?? systemStatus.gpu;
-  const cpu = live ? live.cpuPct : systemStatus.cpu;
-  const ram = live ? live.ramPct : systemStatus.ram;
-  const gpuName = live?.gpuName ?? "Sample hardware profile (backend offline)";
-  const vramUsed = live ? live.vramUsedGb ?? null : systemStatus.vramUsed;
-  const vramTotal = live ? live.vramTotalGb ?? null : systemStatus.vramTotal;
+  const gpu = live?.gpu ?? null;
+  const cpu = live?.cpuPct ?? null;
+  const ram = live?.ramPct ?? null;
+  const gpuName = live?.gpuName ?? "GPU telemetry unavailable";
+  const vramUsed = live?.vramUsedGb ?? null;
+  const vramTotal = live?.vramTotalGb ?? null;
   const vramLabel =
     vramUsed != null && vramTotal != null
       ? `${vramUsed.toFixed(1)} / ${vramTotal.toFixed(0)} GB`
       : "—";
   const vramPct = vramUsed != null && vramTotal ? (vramUsed / vramTotal) * 100 : 0;
-  const spark = history.length >= 2 ? history : Array.from({ length: 40 }, () => gpu);
-  const services =
-    live?.services ??
-    systemStatus.services.map((s) => ({ name: s.name, detail: s.detail, status: s.status }));
-
-  const sourcePill = hardware ? (
-    <StatusPill tone="verified" pulse>
-      Live Hardware
-    </StatusPill>
-  ) : live ? (
-    <StatusPill tone="caution" dot={false}>
-      Simulated Fallback
-    </StatusPill>
-  ) : (
-    <StatusPill tone="info" dot={false}>
-      Bundled Sample
-    </StatusPill>
-  );
-
-  const sourceNote = hardware
-    ? "Live metrics read locally via nvidia-smi (GPU) and psutil (CPU/RAM)."
-    : live
-      ? "Local GPU/CPU metrics are unavailable on this host; the values shown are simulated, not measured."
-      : "Backend offline; showing bundled sample values.";
+  const spark = history.length >= 2 ? history : [];
+  const services = live?.services ?? [];
+  const sourcePill = <StatusPill tone={hardware ? "verified" : "muted"}>{hardware ? "Measured GPU" : "GPU unavailable"}</StatusPill>;
+  const sourceNote = live ? "Available readings are measured locally. Missing readings are shown as unavailable." : "Backend unavailable. Connect the local service to read system metrics.";
 
   return (
     <div>
@@ -69,7 +49,7 @@ export default function SystemPage() {
               <span className="flex items-center gap-3">
                 {sourcePill}
                 <span className="font-mono text-2xs text-signal">
-                  {gpu}% util{live?.gpuTempC != null ? ` · ${live.gpuTempC}°C` : ""}
+                  {gpu == null ? "unavailable" : `${gpu}% util`}{live?.gpuTempC != null ? ` · ${live.gpuTempC}°C` : ""}
                 </span>
               </span>
             }
@@ -118,25 +98,24 @@ export default function SystemPage() {
             right={sourcePill}
           />
           <ul className="divide-y divide-line">
-            {services.map((s) => (
-              <li key={s.name} className="flex items-center gap-3 px-4 py-2.5">
-                <span
-                  className={`led animate-blip ${
-                    s.status === "AIR-GAPPED" ? "bg-caution" : s.status === "SECURE" ? "bg-info" : "bg-verified"
-                  }`}
-                />
-                <div className="flex-1">
-                  <div className="font-mono text-xs text-ink">{s.name}</div>
-                  <div className="font-mono text-2xs text-ink-faint">{s.detail}</div>
-                </div>
-                <StatusPill
-                  tone={s.status === "AIR-GAPPED" ? "caution" : s.status === "SECURE" ? "info" : "verified"}
-                  dot={false}
-                >
-                  {s.status}
-                </StatusPill>
-              </li>
-            ))}
+            {services.map((s) => {
+              const unavailable = ["UNAVAILABLE", "OFFLINE", "ERROR", "DISABLED", "UNCONFIGURED"].includes(s.status);
+              const tone = unavailable ? "danger"
+                : s.status === "AIR-GAPPED" ? "caution"
+                  : s.status === "SECURE" ? "info" : "verified";
+              return (
+                <li key={s.name} className="flex items-center gap-3 px-4 py-2.5">
+                  <span className={`led animate-blip ${unavailable ? "bg-danger" : tone === "caution" ? "bg-caution" : tone === "info" ? "bg-info" : "bg-verified"}`} />
+                  <div className="flex-1">
+                    <div className="font-mono text-xs text-ink">{s.name}</div>
+                    <div className="font-mono text-2xs text-ink-faint">{s.detail}</div>
+                  </div>
+                  <StatusPill tone={tone} dot={false}>
+                    {s.status}
+                  </StatusPill>
+                </li>
+              );
+            })}
           </ul>
         </Panel>
       </div>
@@ -148,21 +127,17 @@ export default function SystemPage() {
           <div>
             <div className="eyebrow mb-2">Inference Mode</div>
             <p className="text-xs leading-relaxed text-ink-muted">
-              Host development defaults to <span className="text-signal">local Ollama</span> models
-              (<span className="font-mono text-ink">qwen3:8b · llava:7b · llama3.2:3b</span>). Set{" "}
-              <span className="font-mono text-ink">KAVACH_INFERENCE_PROVIDER=mock</span> for
-              deterministic model-free runs. The provider interface is drop-in replaceable with
-              llama.cpp or vLLM adapters — nothing above the provider layer changes.
+              Configure local Ollama or Transformers models before requesting summaries.
+              Source-term review and literal field extraction use the supplied text.
+              Missing models produce an availability error; text retrieval uses the configured local embedding backend.
             </p>
           </div>
           <div>
-            <div className="eyebrow mb-2">Sovereignty Guarantees</div>
-            <ul className="space-y-1 font-mono text-2xs text-ink-muted">
-              <li className="text-verified">✓ KAVACH_MODE=airgapped — external providers disabled</li>
-              <li className="text-verified">✓ No OpenAI / Anthropic / Gemini / cloud APIs</li>
-              <li className="text-verified">✓ Documents, embeddings & outputs stay on-premise</li>
-              <li className="text-verified">✓ Every action written to a local audit log</li>
-            </ul>
+            <div className="eyebrow mb-2">Processing policy</div>
+            <p className="text-xs leading-relaxed text-ink-muted">
+              Read the active provider policy in Security Center. Host firewalls and
+              access controls govern network exposure; application restrictions alone do not isolate the host.
+            </p>
           </div>
         </div>
       </Panel>

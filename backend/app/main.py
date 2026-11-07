@@ -14,26 +14,34 @@ from . import config
 from .api.routes import router
 from .database import db
 from .security.middleware import AuditAndAirgapMiddleware, write_audit
-from .services.seed import seed_all
+from .services.model_catalog import refresh_models
+from .models.providers import InferenceUnavailable
+from .services import analysis_jobs, batch_jobs
+from .services.document_store import DocumentNotFound, DocumentBusy, DocumentAccessError
+from fastapi.responses import JSONResponse
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: prepare dirs, DB and seed data.
+    # Startup: prepare directories, schema, and configured model assignments.
     config.ensure_dirs()
     db.init_db()
-    seed_all()
+    analysis_jobs.recover_interrupted()
+    batch_jobs.start()
+    refresh_models()
     write_audit("system.startup",
                 detail=f"{config.APP_NAME} {config.VERSION} started in "
                        f"{config.KAVACH_MODE} mode.")
     yield
+    batch_jobs.shutdown()
+    analysis_jobs.shutdown()
     write_audit("system.shutdown", detail="Application shutting down.")
 
 
 app = FastAPI(
     title=f"{config.APP_NAME} - {config.APP_TAGLINE}",
     version=config.VERSION,
-    description="Sovereign On-Premise Agentic AI Workbench (offline prototype).",
+    description="Private local document analysis and evidence review.",
     lifespan=lifespan,
 )
 
@@ -63,3 +71,19 @@ def root():
         "docs": "/docs",
         "health": "/api/health",
     }
+
+
+@app.exception_handler(InferenceUnavailable)
+async def inference_unavailable(request, exc):
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
+
+
+@app.exception_handler(DocumentNotFound)
+async def document_not_found(request, exc):
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+
+@app.exception_handler(DocumentBusy)
+@app.exception_handler(DocumentAccessError)
+async def document_unavailable(request, exc):
+    return JSONResponse(status_code=409, content={"detail": str(exc)})

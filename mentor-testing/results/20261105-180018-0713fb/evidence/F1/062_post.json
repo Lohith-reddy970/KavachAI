@@ -1,0 +1,15 @@
+{
+  "at": "2026-11-05T18:01:10.745367+00:00",
+  "method": "POST",
+  "path": "/api/documents/upload",
+  "request": {
+    "filename": "F1_disallowed.exe",
+    "bytes": 92,
+    "sha256": "14710d866604cfdc2d0ce82c63ce2fa8657aeef65f3c24e52f4f911ac51f88bc"
+  },
+  "http_status": 400,
+  "elapsed_ms": 19,
+  "response": {
+    "detail": "File type '.exe' not allowed. Allowed: csv, docx, jpeg, jpg, pdf, png, py, txt."
+  }
+}

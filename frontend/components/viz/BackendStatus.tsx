@@ -4,13 +4,8 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { StatusPill } from "@/components/ui";
 
-type State = "checking" | "connected" | "standalone";
+type State = "checking" | "connected" | "unavailable";
 
-/**
- * Live probe of the optional FastAPI backend. Never blocks the sample workflow: if the
- * backend is offline the UI simply reports it is running standalone on the
- * local mock-inference layer.
- */
 export function BackendStatus() {
   const [state, setState] = useState<State>("checking");
   const [info, setInfo] = useState<string>("");
@@ -26,21 +21,21 @@ export function BackendStatus() {
       })
       .catch(() => {
         if (!alive) return;
-        setState("standalone");
-        setInfo("mock inference layer");
+        setState("unavailable");
+        setInfo("Local service is not reachable");
       });
     return () => {
       alive = false;
     };
   }, []);
 
-  const tone = state === "connected" ? "verified" : state === "standalone" ? "info" : "muted";
+  const tone = state === "connected" ? "verified" : state === "unavailable" ? "info" : "muted";
   const label =
     state === "checking"
       ? "Probing backend…"
       : state === "connected"
         ? "FastAPI Backend Connected"
-        : "Standalone (Mock Inference)";
+        : "Backend unavailable";
 
   return (
     <div className="flex items-center gap-2">

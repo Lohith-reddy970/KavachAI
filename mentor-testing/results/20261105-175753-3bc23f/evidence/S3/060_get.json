@@ -1,0 +1,808 @@
+{
+  "at": "2026-11-05T17:58:44.972656+00:00",
+  "method": "GET",
+  "path": "/api/analysis/jobs/871230ca472e4e8eb51ad3f233dbd8af",
+  "request": null,
+  "http_status": 200,
+  "elapsed_ms": 10,
+  "response": {
+    "id": "871230ca472e4e8eb51ad3f233dbd8af",
+    "document_id": 3,
+    "status": "completed",
+    "error": null,
+    "run_id": 3,
+    "created_at": "2026-11-05T17:58:36.847239+00:00",
+    "updated_at": "2026-11-05T17:58:44.418301+00:00",
+    "request": {
+      "document_id": 3,
+      "title": "Acceptance test S3",
+      "description": "Analyze the selected controlled test input using only its content.",
+      "task_type": null,
+      "profile": "business",
+      "analysis_mode": "extract_fields",
+      "workflow": "planner",
+      "max_steps": 10
+    },
+    "stages": [
+      {
+        "id": "validation",
+        "label": "Check document",
+        "description": "Validate the stored source and analysis settings.",
+        "status": "completed",
+        "message": "Document and planner settings checked",
+        "detail": "S3_project_record.txt",
+        "started_at": null,
+        "finished_at": "2026-11-05T17:58:36.873861+00:00",
+        "metadata": {
+          "profile": "business",
+          "mode": "extract_fields"
+        },
+        "events": [
+          {
+            "at": "2026-11-05T17:58:36.873861+00:00",
+            "status": "completed",
+            "message": "Document and planner settings checked",
+            "detail": "S3_project_record.txt"
+          }
+        ]
+      },
+      {
+        "id": "extraction",
+        "label": "Extract text / OCR",
+        "description": "Read source pages and use local OCR where needed.",
+        "status": "completed",
+        "message": "Read 1 page(s); OCR supplied 0 page(s)",
+        "detail": "",
+        "started_at": "2026-11-05T17:58:36.876795+00:00",
+        "finished_at": "2026-11-05T17:58:36.886926+00:00",
+        "metadata": {
+          "status": "ready",
+          "method": "text",
+          "page_count": 1,
+          "ocr_pages": 0,
+          "ocr_attempted_pages": 0,
+          "note": "",
+          "characters": 186
+        },
+        "events": [
+          {
+            "at": "2026-11-05T17:58:36.876795+00:00",
+            "status": "running",
+            "message": "Reading source pages",
+            "detail": "S3_project_record.txt"
+          },
+          {
+            "at": "2026-11-05T17:58:36.886926+00:00",
+            "status": "completed",
+            "message": "Read 1 page(s); OCR supplied 0 page(s)",
+            "detail": ""
+          }
+        ]
+      },
+      {
+        "id": "routing",
+        "label": "Plan analysis",
+        "description": "Check provider policy, select models, and prepare the document.",
+        "status": "completed",
+        "message": "Planner chose: finish",
+        "detail": "All required steps are complete.",
+        "started_at": "2026-11-05T17:58:36.897307+00:00",
+        "finished_at": "2026-11-05T17:58:44.197424+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T17:58:44.141153+00:00",
+            "status": "completed",
+            "message": "Planner chose: reason",
+            "detail": "Evidence gathered; ready to synthesize findings."
+          },
+          {
+            "at": "2026-11-05T17:58:44.145619+00:00",
+            "status": "completed",
+            "message": "Planner chose: reason",
+            "detail": "Evidence gathered; ready to synthesize findings."
+          },
+          {
+            "at": "2026-11-05T17:58:44.162539+00:00",
+            "status": "running",
+            "message": "Choosing the next permitted action",
+            "detail": "Planner step 4 of 10"
+          },
+          {
+            "at": "2026-11-05T17:58:44.166438+00:00",
+            "status": "completed",
+            "message": "Planner chose: verify",
+            "detail": "Findings exist but are not verified."
+          },
+          {
+            "at": "2026-11-05T17:58:44.170325+00:00",
+            "status": "completed",
+            "message": "Planner chose: verify",
+            "detail": "Findings exist but are not verified."
+          },
+          {
+            "at": "2026-11-05T17:58:44.187164+00:00",
+            "status": "running",
+            "message": "Choosing the next permitted action",
+            "detail": "Planner step 5 of 10"
+          },
+          {
+            "at": "2026-11-05T17:58:44.191459+00:00",
+            "status": "completed",
+            "message": "Planner chose: finish",
+            "detail": "All required steps are complete."
+          },
+          {
+            "at": "2026-11-05T17:58:44.197424+00:00",
+            "status": "completed",
+            "message": "Planner chose: finish",
+            "detail": "All required steps are complete."
+          }
+        ]
+      },
+      {
+        "id": "vision",
+        "label": "Inspect images",
+        "description": "Describe visual input when the selected task needs it.",
+        "status": "skipped",
+        "message": "Not used by this analysis",
+        "detail": "",
+        "started_at": null,
+        "finished_at": "2026-11-05T17:58:44.418082+00:00",
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "knowledge",
+        "label": "Retrieve context",
+        "description": "Build local retrieval vectors and find relevant passages.",
+        "status": "completed",
+        "message": "Knowledge retrieved",
+        "detail": "Retrieved 3 chunks from the local vector DB for query 'Analyze the selected controlled test input using only its content.'.",
+        "started_at": "2026-11-05T17:58:43.840741+00:00",
+        "finished_at": "2026-11-05T17:58:44.133537+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T17:58:43.840741+00:00",
+            "status": "running",
+            "message": "Executing search_knowledge",
+            "detail": "No supporting knowledge retrieved yet."
+          },
+          {
+            "at": "2026-11-05T17:58:44.130326+00:00",
+            "status": "completed",
+            "message": "Knowledge retrieved",
+            "detail": "Retrieved 3 chunks from the local vector DB for query 'Analyze the selected controlled test input using only its content.'."
+          },
+          {
+            "at": "2026-11-05T17:58:44.133537+00:00",
+            "status": "completed",
+            "message": "Knowledge retrieved",
+            "detail": "Retrieved 3 chunks from the local vector DB for query 'Analyze the selected controlled test input using only its content.'."
+          }
+        ]
+      },
+      {
+        "id": "reasoning",
+        "label": "Analyze content",
+        "description": "Generate a summary, match review terms, or extract literal fields.",
+        "status": "completed",
+        "message": "Field extraction completed",
+        "detail": "profile=business; mode=extract_fields; extracted 5 literal fields with source excerpts.",
+        "started_at": "2026-11-05T17:58:44.149804+00:00",
+        "finished_at": "2026-11-05T17:58:44.158422+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T17:58:44.149804+00:00",
+            "status": "running",
+            "message": "Executing reason",
+            "detail": "Evidence gathered; ready to synthesize findings."
+          },
+          {
+            "at": "2026-11-05T17:58:44.154462+00:00",
+            "status": "completed",
+            "message": "Field extraction completed",
+            "detail": "profile=business; mode=extract_fields; extracted 5 literal fields with source excerpts."
+          },
+          {
+            "at": "2026-11-05T17:58:44.158422+00:00",
+            "status": "completed",
+            "message": "Field extraction completed",
+            "detail": "profile=business; mode=extract_fields; extracted 5 literal fields with source excerpts."
+          }
+        ]
+      },
+      {
+        "id": "verification",
+        "label": "Verify sources",
+        "description": "Check citations and decide which findings need human review.",
+        "status": "completed",
+        "message": "Evidence cross-check completed",
+        "detail": "5/5 finding(s) confirmed against the cited source pages (score 100.0%); 0 flagged for human review.",
+        "started_at": "2026-11-05T17:58:44.174344+00:00",
+        "finished_at": "2026-11-05T17:58:44.184228+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T17:58:44.174344+00:00",
+            "status": "running",
+            "message": "Executing verify",
+            "detail": "Findings exist but are not verified."
+          },
+          {
+            "at": "2026-11-05T17:58:44.178540+00:00",
+            "status": "completed",
+            "message": "Evidence cross-check completed",
+            "detail": "5/5 finding(s) confirmed against the cited source pages (score 100.0%); 0 flagged for human review."
+          },
+          {
+            "at": "2026-11-05T17:58:44.184228+00:00",
+            "status": "completed",
+            "message": "Evidence cross-check completed",
+            "detail": "5/5 finding(s) confirmed against the cited source pages (score 100.0%); 0 flagged for human review."
+          }
+        ]
+      },
+      {
+        "id": "deliverables",
+        "label": "Save results",
+        "description": "Save the run, findings, and downloadable report files.",
+        "status": "completed",
+        "message": "Reports and run saved",
+        "detail": "",
+        "started_at": "2026-11-05T17:58:44.203691+00:00",
+        "finished_at": "2026-11-05T17:58:44.408600+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T17:58:44.203691+00:00",
+            "status": "running",
+            "message": "Generating and saving report files",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T17:58:44.279796+00:00",
+            "status": "completed",
+            "message": "Report generated",
+            "detail": "Produced 5 deliverable file(s): docx, md, pdf, txt, xlsx."
+          },
+          {
+            "at": "2026-11-05T17:58:44.408600+00:00",
+            "status": "completed",
+            "message": "Reports and run saved",
+            "detail": ""
+          }
+        ]
+      }
+    ],
+    "result": {
+      "document": {
+        "id": 3,
+        "name": "S3_project_record.txt",
+        "filename": "S3_project_record.txt",
+        "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime\\uploads\\S3_project_record.txt",
+        "doc_type": "txt",
+        "size_bytes": 193,
+        "pages": 1,
+        "extraction_method": "text",
+        "ocr_pages": 0,
+        "status": "analyzed",
+        "summary": "User-uploaded txt document.",
+        "created_at": "2026-11-05T17:58:36.830533+00:00",
+        "retired_sample": 0
+      },
+      "run": {
+        "run": {
+          "id": 3,
+          "task_id": null,
+          "scenario": "agentic",
+          "status": "completed",
+          "verification_score": 100.0,
+          "evidence_backed": "5/5",
+          "started_at": "2026-11-05T17:58:36.889924+00:00",
+          "finished_at": "2026-11-05T17:58:44.404760+00:00",
+          "retired_sample": 0,
+          "analysis_profile": "business",
+          "analysis_mode": "extract_fields"
+        },
+        "steps": [
+          {
+            "id": 23,
+            "run_id": 3,
+            "seq": 1,
+            "agent": "security_agent",
+            "message": "Provider policy checked",
+            "status": "completed",
+            "detail": "KAVACH_MODE=airgapped; local provider 'ollama' authorized; model connections are restricted by application policy; host isolation is deployment-managed.",
+            "started_at": "2026-11-05T17:58:36.901150+00:00",
+            "finished_at": "2026-11-05T17:58:36.901160+00:00"
+          },
+          {
+            "id": 24,
+            "run_id": 3,
+            "seq": 2,
+            "agent": "planner_agent",
+            "message": "Planner chose: inspect_document",
+            "status": "completed",
+            "detail": "Documents have not been loaded yet.",
+            "started_at": "2026-11-05T17:58:43.802677+00:00",
+            "finished_at": "2026-11-05T17:58:43.802691+00:00"
+          },
+          {
+            "id": 25,
+            "run_id": 3,
+            "seq": 3,
+            "agent": "document_agent",
+            "message": "Uploaded document loaded",
+            "status": "completed",
+            "detail": "Loaded S3_project_record.txt (1 page(s), 186 extracted characters; method=text).",
+            "started_at": "2026-11-05T17:58:43.814324+00:00",
+            "finished_at": "2026-11-05T17:58:43.814341+00:00"
+          },
+          {
+            "id": 26,
+            "run_id": 3,
+            "seq": 4,
+            "agent": "document_agent",
+            "message": "Document analysis prepared",
+            "status": "completed",
+            "detail": "Locally extracted text and page provenance are available to downstream agents; no external upload performed.",
+            "started_at": "2026-11-05T17:58:43.818427+00:00",
+            "finished_at": "2026-11-05T17:58:43.818441+00:00"
+          },
+          {
+            "id": 27,
+            "run_id": 3,
+            "seq": 5,
+            "agent": "planner_agent",
+            "message": "Planner chose: search_knowledge",
+            "status": "completed",
+            "detail": "No supporting knowledge retrieved yet.",
+            "started_at": "2026-11-05T17:58:43.832078+00:00",
+            "finished_at": "2026-11-05T17:58:43.832094+00:00"
+          },
+          {
+            "id": 28,
+            "run_id": 3,
+            "seq": 6,
+            "agent": "knowledge_agent",
+            "message": "Knowledge retrieved",
+            "status": "completed",
+            "detail": "Retrieved 3 chunks from the local vector DB for query 'Analyze the selected controlled test input using only its content.'.",
+            "started_at": "2026-11-05T17:58:44.130305+00:00",
+            "finished_at": "2026-11-05T17:58:44.130314+00:00"
+          },
+          {
+            "id": 29,
+            "run_id": 3,
+            "seq": 7,
+            "agent": "planner_agent",
+            "message": "Planner chose: reason",
+            "status": "completed",
+            "detail": "Evidence gathered; ready to synthesize findings.",
+            "started_at": "2026-11-05T17:58:44.141116+00:00",
+            "finished_at": "2026-11-05T17:58:44.141136+00:00"
+          },
+          {
+            "id": 30,
+            "run_id": 3,
+            "seq": 8,
+            "agent": "reasoning_agent",
+            "message": "Field extraction completed",
+            "status": "completed",
+            "detail": "profile=business; mode=extract_fields; extracted 5 literal fields with source excerpts.",
+            "started_at": "2026-11-05T17:58:44.154433+00:00",
+            "finished_at": "2026-11-05T17:58:44.154448+00:00"
+          },
+          {
+            "id": 31,
+            "run_id": 3,
+            "seq": 9,
+            "agent": "planner_agent",
+            "message": "Planner chose: verify",
+            "status": "completed",
+            "detail": "Findings exist but are not verified.",
+            "started_at": "2026-11-05T17:58:44.166411+00:00",
+            "finished_at": "2026-11-05T17:58:44.166424+00:00"
+          },
+          {
+            "id": 32,
+            "run_id": 3,
+            "seq": 10,
+            "agent": "verification_agent",
+            "message": "Evidence cross-check completed",
+            "status": "completed",
+            "detail": "5/5 finding(s) confirmed against the cited source pages (score 100.0%); 0 flagged for human review.",
+            "started_at": "2026-11-05T17:58:44.178511+00:00",
+            "finished_at": "2026-11-05T17:58:44.178523+00:00"
+          },
+          {
+            "id": 33,
+            "run_id": 3,
+            "seq": 11,
+            "agent": "planner_agent",
+            "message": "Planner chose: finish",
+            "status": "completed",
+            "detail": "All required steps are complete.",
+            "started_at": "2026-11-05T17:58:44.191421+00:00",
+            "finished_at": "2026-11-05T17:58:44.191441+00:00"
+          },
+          {
+            "id": 34,
+            "run_id": 3,
+            "seq": 12,
+            "agent": "deliverable_agent",
+            "message": "Report generated",
+            "status": "completed",
+            "detail": "Produced 5 deliverable file(s): docx, md, pdf, txt, xlsx.",
+            "started_at": "2026-11-05T17:58:44.279755+00:00",
+            "finished_at": "2026-11-05T17:58:44.279772+00:00"
+          }
+        ],
+        "findings": [
+          {
+            "id": 7,
+            "run_id": 3,
+            "title": "Extracted reference identifier: PRJ-2026-103",
+            "description": "Literal reference identifier extracted from the source text.",
+            "severity": "info",
+            "confidence": 100.0,
+            "equipment_id": "PRJ-2026-103",
+            "needs_review": 0,
+            "review_status": "pending",
+            "created_at": "2026-11-05T17:58:44.336583+00:00",
+            "review_reasons": [],
+            "evidence": [
+              {
+                "id": 7,
+                "finding_id": 7,
+                "run_id": 3,
+                "source": "S3_project_record.txt",
+                "page": 1,
+                "excerpt": "Reference: PRJ-2026-103",
+                "extraction_method": "text",
+                "ocr_confidence": null,
+                "confidence": 100.0,
+                "created_at": "2026-11-05T17:58:44.341374+00:00",
+                "location": {
+                  "char_start": 75,
+                  "char_end": 98
+                }
+              }
+            ]
+          },
+          {
+            "id": 8,
+            "run_id": 3,
+            "title": "Extracted date: 2026-11-06",
+            "description": "Literal date extracted from the source text.",
+            "severity": "info",
+            "confidence": 100.0,
+            "equipment_id": "",
+            "needs_review": 0,
+            "review_status": "pending",
+            "created_at": "2026-11-05T17:58:44.345918+00:00",
+            "review_reasons": [],
+            "evidence": [
+              {
+                "id": 8,
+                "finding_id": 8,
+                "run_id": 3,
+                "source": "S3_project_record.txt",
+                "page": 1,
+                "excerpt": "Date: 2026-11-06",
+                "extraction_method": "text",
+                "ocr_confidence": null,
+                "confidence": 100.0,
+                "created_at": "2026-11-05T17:58:44.351094+00:00",
+                "location": {
+                  "char_start": 99,
+                  "char_end": 115
+                }
+              }
+            ]
+          },
+          {
+            "id": 9,
+            "run_id": 3,
+            "title": "Extracted amount: INR 4800",
+            "description": "Literal amount extracted from the source text.",
+            "severity": "info",
+            "confidence": 100.0,
+            "equipment_id": "",
+            "needs_review": 0,
+            "review_status": "pending",
+            "created_at": "2026-11-05T17:58:44.355964+00:00",
+            "review_reasons": [],
+            "evidence": [
+              {
+                "id": 9,
+                "finding_id": 9,
+                "run_id": 3,
+                "source": "S3_project_record.txt",
+                "page": 1,
+                "excerpt": "Budget: INR 4800",
+                "extraction_method": "text",
+                "ocr_confidence": null,
+                "confidence": 100.0,
+                "created_at": "2026-11-05T17:58:44.359881+00:00",
+                "location": {
+                  "char_start": 116,
+                  "char_end": 132
+                }
+              }
+            ]
+          },
+          {
+            "id": 10,
+            "run_id": 3,
+            "title": "Extracted owner / approver: Test Coordinator",
+            "description": "Literal owner / approver extracted from the source text.",
+            "severity": "info",
+            "confidence": 100.0,
+            "equipment_id": "",
+            "needs_review": 0,
+            "review_status": "pending",
+            "created_at": "2026-11-05T17:58:44.364190+00:00",
+            "review_reasons": [],
+            "evidence": [
+              {
+                "id": 10,
+                "finding_id": 10,
+                "run_id": 3,
+                "source": "S3_project_record.txt",
+                "page": 1,
+                "excerpt": "Owner: Test Coordinator",
+                "extraction_method": "text",
+                "ocr_confidence": null,
+                "confidence": 100.0,
+                "created_at": "2026-11-05T17:58:44.368649+00:00",
+                "location": {
+                  "char_start": 133,
+                  "char_end": 156
+                }
+              }
+            ]
+          },
+          {
+            "id": 11,
+            "run_id": 3,
+            "title": "Extracted email: planner@example.org",
+            "description": "Literal email extracted from the source text.",
+            "severity": "info",
+            "confidence": 100.0,
+            "equipment_id": "",
+            "needs_review": 0,
+            "review_status": "pending",
+            "created_at": "2026-11-05T17:58:44.373148+00:00",
+            "review_reasons": [],
+            "evidence": [
+              {
+                "id": 11,
+                "finding_id": 11,
+                "run_id": 3,
+                "source": "S3_project_record.txt",
+                "page": 1,
+                "excerpt": "Contact: planner@example.org",
+                "extraction_method": "text",
+                "ocr_confidence": null,
+                "confidence": 100.0,
+                "created_at": "2026-11-05T17:58:44.378225+00:00",
+                "location": {
+                  "char_start": 157,
+                  "char_end": 185
+                }
+              }
+            ]
+          }
+        ],
+        "evidence": [
+          {
+            "id": 7,
+            "finding_id": 7,
+            "run_id": 3,
+            "source": "S3_project_record.txt",
+            "page": 1,
+            "excerpt": "Reference: PRJ-2026-103",
+            "extraction_method": "text",
+            "ocr_confidence": null,
+            "confidence": 100.0,
+            "created_at": "2026-11-05T17:58:44.341374+00:00",
+            "location": {
+              "char_start": 75,
+              "char_end": 98
+            }
+          },
+          {
+            "id": 8,
+            "finding_id": 8,
+            "run_id": 3,
+            "source": "S3_project_record.txt",
+            "page": 1,
+            "excerpt": "Date: 2026-11-06",
+            "extraction_method": "text",
+            "ocr_confidence": null,
+            "confidence": 100.0,
+            "created_at": "2026-11-05T17:58:44.351094+00:00",
+            "location": {
+              "char_start": 99,
+              "char_end": 115
+            }
+          },
+          {
+            "id": 9,
+            "finding_id": 9,
+            "run_id": 3,
+            "source": "S3_project_record.txt",
+            "page": 1,
+            "excerpt": "Budget: INR 4800",
+            "extraction_method": "text",
+            "ocr_confidence": null,
+            "confidence": 100.0,
+            "created_at": "2026-11-05T17:58:44.359881+00:00",
+            "location": {
+              "char_start": 116,
+              "char_end": 132
+            }
+          },
+          {
+            "id": 10,
+            "finding_id": 10,
+            "run_id": 3,
+            "source": "S3_project_record.txt",
+            "page": 1,
+            "excerpt": "Owner: Test Coordinator",
+            "extraction_method": "text",
+            "ocr_confidence": null,
+            "confidence": 100.0,
+            "created_at": "2026-11-05T17:58:44.368649+00:00",
+            "location": {
+              "char_start": 133,
+              "char_end": 156
+            }
+          },
+          {
+            "id": 11,
+            "finding_id": 11,
+            "run_id": 3,
+            "source": "S3_project_record.txt",
+            "page": 1,
+            "excerpt": "Contact: planner@example.org",
+            "extraction_method": "text",
+            "ocr_confidence": null,
+            "confidence": 100.0,
+            "created_at": "2026-11-05T17:58:44.378225+00:00",
+            "location": {
+              "char_start": 157,
+              "char_end": 185
+            }
+          }
+        ],
+        "deliverables": [
+          {
+            "id": 11,
+            "run_id": 3,
+            "name": "Document Analysis Report (Text)",
+            "filename": "kavach_report_run3.txt",
+            "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime\\generated\\kavach_report_run3.txt",
+            "fmt": "txt",
+            "size_bytes": 2570,
+            "created_at": "2026-11-05T17:58:44.382479+00:00"
+          },
+          {
+            "id": 12,
+            "run_id": 3,
+            "name": "Document Analysis Report (Markdown)",
+            "filename": "kavach_report_run3.md",
+            "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime\\generated\\kavach_report_run3.md",
+            "fmt": "md",
+            "size_bytes": 3121,
+            "created_at": "2026-11-05T17:58:44.387503+00:00"
+          },
+          {
+            "id": 13,
+            "run_id": 3,
+            "name": "Document Analysis Report (Word)",
+            "filename": "kavach_report_run3.docx",
+            "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime\\generated\\kavach_report_run3.docx",
+            "fmt": "docx",
+            "size_bytes": 35755,
+            "created_at": "2026-11-05T17:58:44.392090+00:00"
+          },
+          {
+            "id": 14,
+            "run_id": 3,
+            "name": "Document Fields and Findings (Excel)",
+            "filename": "kavach_report_run3.xlsx",
+            "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime\\generated\\kavach_report_run3.xlsx",
+            "fmt": "xlsx",
+            "size_bytes": 5194,
+            "created_at": "2026-11-05T17:58:44.396533+00:00"
+          },
+          {
+            "id": 15,
+            "run_id": 3,
+            "name": "Document Analysis Report (PDF)",
+            "filename": "kavach_report_run3.pdf",
+            "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime\\generated\\kavach_report_run3.pdf",
+            "fmt": "pdf",
+            "size_bytes": 2597,
+            "created_at": "2026-11-05T17:58:44.400999+00:00"
+          }
+        ],
+        "analysis": null,
+        "vision": null,
+        "extraction": {
+          "status": "ready",
+          "method": "text",
+          "page_count": 1,
+          "ocr_pages": 0,
+          "ocr_attempted_pages": 0,
+          "note": ""
+        },
+        "planner": {
+          "provider": "ollama",
+          "max_steps": 10,
+          "steps_used": 5,
+          "stop_reason": "finished",
+          "trace": [
+            {
+              "step": 1,
+              "action": "inspect_document",
+              "reason": "Documents have not been loaded yet.",
+              "args": {},
+              "status": "completed"
+            },
+            {
+              "step": 2,
+              "action": "search_knowledge",
+              "reason": "No supporting knowledge retrieved yet.",
+              "args": {
+                "query": "Analyze the selected controlled test input using only its content.",
+                "top_k": 4
+              },
+              "status": "completed"
+            },
+            {
+              "step": 3,
+              "action": "reason",
+              "reason": "Evidence gathered; ready to synthesize findings.",
+              "args": {},
+              "status": "completed"
+            },
+            {
+              "step": 4,
+              "action": "verify",
+              "reason": "Findings exist but are not verified.",
+              "args": {},
+              "status": "completed"
+            },
+            {
+              "step": 5,
+              "action": "finish",
+              "reason": "All required steps are complete.",
+              "args": {},
+              "status": "completed"
+            }
+          ],
+          "requires_human_review": false,
+          "review_required": [],
+          "allowed_tools": [
+            "search_knowledge",
+            "inspect_document",
+            "analyze_pid",
+            "reason",
+            "verify",
+            "human_review"
+          ]
+        }
+      }
+    },
+    "document": {
+      "id": 3,
+      "filename": "S3_project_record.txt"
+    }
+  }
+}

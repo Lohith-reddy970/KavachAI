@@ -1,0 +1,180 @@
+{
+  "at": "2026-11-05T17:58:42.956062+00:00",
+  "method": "GET",
+  "path": "/api/analysis/jobs/871230ca472e4e8eb51ad3f233dbd8af",
+  "request": null,
+  "http_status": 200,
+  "elapsed_ms": 4,
+  "response": {
+    "id": "871230ca472e4e8eb51ad3f233dbd8af",
+    "document_id": 3,
+    "status": "running",
+    "error": null,
+    "run_id": 3,
+    "created_at": "2026-11-05T17:58:36.847239+00:00",
+    "updated_at": "2026-11-05T17:58:36.906610+00:00",
+    "request": {
+      "document_id": 3,
+      "title": "Acceptance test S3",
+      "description": "Analyze the selected controlled test input using only its content.",
+      "task_type": null,
+      "profile": "business",
+      "analysis_mode": "extract_fields",
+      "workflow": "planner",
+      "max_steps": 10
+    },
+    "stages": [
+      {
+        "id": "validation",
+        "label": "Check document",
+        "description": "Validate the stored source and analysis settings.",
+        "status": "completed",
+        "message": "Document and planner settings checked",
+        "detail": "S3_project_record.txt",
+        "started_at": null,
+        "finished_at": "2026-11-05T17:58:36.873861+00:00",
+        "metadata": {
+          "profile": "business",
+          "mode": "extract_fields"
+        },
+        "events": [
+          {
+            "at": "2026-11-05T17:58:36.873861+00:00",
+            "status": "completed",
+            "message": "Document and planner settings checked",
+            "detail": "S3_project_record.txt"
+          }
+        ]
+      },
+      {
+        "id": "extraction",
+        "label": "Extract text / OCR",
+        "description": "Read source pages and use local OCR where needed.",
+        "status": "completed",
+        "message": "Read 1 page(s); OCR supplied 0 page(s)",
+        "detail": "",
+        "started_at": "2026-11-05T17:58:36.876795+00:00",
+        "finished_at": "2026-11-05T17:58:36.886926+00:00",
+        "metadata": {
+          "status": "ready",
+          "method": "text",
+          "page_count": 1,
+          "ocr_pages": 0,
+          "ocr_attempted_pages": 0,
+          "note": "",
+          "characters": 186
+        },
+        "events": [
+          {
+            "at": "2026-11-05T17:58:36.876795+00:00",
+            "status": "running",
+            "message": "Reading source pages",
+            "detail": "S3_project_record.txt"
+          },
+          {
+            "at": "2026-11-05T17:58:36.886926+00:00",
+            "status": "completed",
+            "message": "Read 1 page(s); OCR supplied 0 page(s)",
+            "detail": ""
+          }
+        ]
+      },
+      {
+        "id": "routing",
+        "label": "Plan analysis",
+        "description": "Check provider policy, select models, and prepare the document.",
+        "status": "running",
+        "message": "Choosing the next permitted action",
+        "detail": "Planner step 1 of 10",
+        "started_at": "2026-11-05T17:58:36.897307+00:00",
+        "finished_at": null,
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T17:58:36.897307+00:00",
+            "status": "running",
+            "message": "Checking local provider policy",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T17:58:36.901181+00:00",
+            "status": "completed",
+            "message": "Provider policy checked",
+            "detail": "KAVACH_MODE=airgapped; local provider 'ollama' authorized; model connections are restricted by application policy; host isolation is deployment-managed."
+          },
+          {
+            "at": "2026-11-05T17:58:36.906610+00:00",
+            "status": "running",
+            "message": "Choosing the next permitted action",
+            "detail": "Planner step 1 of 10"
+          }
+        ]
+      },
+      {
+        "id": "vision",
+        "label": "Inspect images",
+        "description": "Describe visual input when the selected task needs it.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "knowledge",
+        "label": "Retrieve context",
+        "description": "Build local retrieval vectors and find relevant passages.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "reasoning",
+        "label": "Analyze content",
+        "description": "Generate a summary, match review terms, or extract literal fields.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "verification",
+        "label": "Verify sources",
+        "description": "Check citations and decide which findings need human review.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "deliverables",
+        "label": "Save results",
+        "description": "Save the run, findings, and downloadable report files.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      }
+    ],
+    "result": null,
+    "document": {
+      "id": 3,
+      "filename": "S3_project_record.txt"
+    }
+  }
+}

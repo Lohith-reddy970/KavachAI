@@ -1,0 +1,232 @@
+{
+  "at": "2026-11-05T17:58:22.680205+00:00",
+  "method": "GET",
+  "path": "/api/analysis/jobs/2cc935b46d0943aba45093b8fcddfee3",
+  "request": null,
+  "http_status": 200,
+  "elapsed_ms": 5,
+  "response": {
+    "id": "2cc935b46d0943aba45093b8fcddfee3",
+    "document_id": 2,
+    "status": "running",
+    "error": null,
+    "run_id": 2,
+    "created_at": "2026-11-05T17:58:19.641452+00:00",
+    "updated_at": "2026-11-05T17:58:21.017809+00:00",
+    "request": {
+      "document_id": 2,
+      "title": "Acceptance test S2",
+      "description": "Analyze the selected controlled test input using only its content.",
+      "task_type": null,
+      "profile": "finance",
+      "analysis_mode": "extract_fields",
+      "workflow": "pipeline",
+      "max_steps": null
+    },
+    "stages": [
+      {
+        "id": "validation",
+        "label": "Check document",
+        "description": "Validate the stored source and analysis settings.",
+        "status": "completed",
+        "message": "Document and settings checked",
+        "detail": "S2_invoice.png",
+        "started_at": "2026-11-05T17:58:19.662041+00:00",
+        "finished_at": "2026-11-05T17:58:19.668235+00:00",
+        "metadata": {
+          "profile": "finance",
+          "mode": "extract_fields"
+        },
+        "events": [
+          {
+            "at": "2026-11-05T17:58:19.662041+00:00",
+            "status": "running",
+            "message": "Checking the document and analysis settings",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T17:58:19.668235+00:00",
+            "status": "completed",
+            "message": "Document and settings checked",
+            "detail": "S2_invoice.png"
+          }
+        ]
+      },
+      {
+        "id": "extraction",
+        "label": "Extract text / OCR",
+        "description": "Read source pages and use local OCR where needed.",
+        "status": "completed",
+        "message": "Read 1 page(s); OCR supplied 1 page(s)",
+        "detail": "",
+        "started_at": "2026-11-05T17:58:19.671147+00:00",
+        "finished_at": "2026-11-05T17:58:20.967522+00:00",
+        "metadata": {
+          "status": "ready",
+          "method": "tesseract",
+          "page_count": 1,
+          "ocr_pages": 1,
+          "ocr_attempted_pages": 1,
+          "note": "",
+          "characters": 174
+        },
+        "events": [
+          {
+            "at": "2026-11-05T17:58:19.671147+00:00",
+            "status": "running",
+            "message": "Reading source pages",
+            "detail": "S2_invoice.png"
+          },
+          {
+            "at": "2026-11-05T17:58:20.967522+00:00",
+            "status": "completed",
+            "message": "Read 1 page(s); OCR supplied 1 page(s)",
+            "detail": ""
+          }
+        ]
+      },
+      {
+        "id": "routing",
+        "label": "Plan analysis",
+        "description": "Check provider policy, select models, and prepare the document.",
+        "status": "completed",
+        "message": "Document analysis prepared",
+        "detail": "Locally extracted text and page provenance are available to downstream agents; no external upload performed.",
+        "started_at": "2026-11-05T17:58:20.982827+00:00",
+        "finished_at": "2026-11-05T17:58:21.009836+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T17:58:20.982827+00:00",
+            "status": "running",
+            "message": "Starting routing stage",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T17:58:20.986398+00:00",
+            "status": "completed",
+            "message": "Provider policy checked",
+            "detail": "KAVACH_MODE=airgapped; local provider 'ollama' authorized; model connections are restricted by application policy; host isolation is deployment-managed."
+          },
+          {
+            "at": "2026-11-05T17:58:20.990444+00:00",
+            "status": "completed",
+            "message": "Task routed to qwen3:8b",
+            "detail": "task_type=reasoning; General analytical task; routing to qwen3:8b."
+          },
+          {
+            "at": "2026-11-05T17:58:20.994299+00:00",
+            "status": "completed",
+            "message": "Execution plan created",
+            "detail": "1. Parse source text and retain page provenance; OCR sparse pages if needed; 2. Inspect the supplied image with the local vision model; retain OCR fields separately; 3. Chunk source text and retrieve local context using embeddings and cosine similarity; 4. Extract literal fields with source citations; 5. Cross-check cited excerpts; apply severity, confidence, and explicit-review gates; 6. Generate local deliverables and persist the auditable run trace"
+          },
+          {
+            "at": "2026-11-05T17:58:20.997941+00:00",
+            "status": "completed",
+            "message": "Uploaded document loaded",
+            "detail": "Loaded S2_invoice.png (1 page(s), 174 extracted characters; method=tesseract)."
+          },
+          {
+            "at": "2026-11-05T17:58:21.001877+00:00",
+            "status": "completed",
+            "message": "OCR completed",
+            "detail": "Local Tesseract OCR returned text on 1 of 1 attempted page(s)."
+          },
+          {
+            "at": "2026-11-05T17:58:21.005872+00:00",
+            "status": "completed",
+            "message": "Document analysis prepared",
+            "detail": "Locally extracted text and page provenance are available to downstream agents; no external upload performed."
+          },
+          {
+            "at": "2026-11-05T17:58:21.009836+00:00",
+            "status": "completed",
+            "message": "Document analysis prepared",
+            "detail": "Locally extracted text and page provenance are available to downstream agents; no external upload performed."
+          }
+        ]
+      },
+      {
+        "id": "vision",
+        "label": "Inspect images",
+        "description": "Describe visual input when the selected task needs it.",
+        "status": "running",
+        "message": "Inspecting the uploaded image",
+        "detail": "The local vision model is reading the image; OCR fields are extracted separately.",
+        "started_at": "2026-11-05T17:58:21.013889+00:00",
+        "finished_at": null,
+        "metadata": {
+          "model": "llava:7b",
+          "provider": "ollama"
+        },
+        "events": [
+          {
+            "at": "2026-11-05T17:58:21.013889+00:00",
+            "status": "running",
+            "message": "Starting vision stage",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T17:58:21.017809+00:00",
+            "status": "running",
+            "message": "Inspecting the uploaded image",
+            "detail": "The local vision model is reading the image; OCR fields are extracted separately."
+          }
+        ]
+      },
+      {
+        "id": "knowledge",
+        "label": "Retrieve context",
+        "description": "Build local retrieval vectors and find relevant passages.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "reasoning",
+        "label": "Analyze content",
+        "description": "Generate a summary, match review terms, or extract literal fields.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "verification",
+        "label": "Verify sources",
+        "description": "Check citations and decide which findings need human review.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "deliverables",
+        "label": "Save results",
+        "description": "Save the run, findings, and downloadable report files.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      }
+    ],
+    "result": null,
+    "document": {
+      "id": 2,
+      "filename": "S2_invoice.png"
+    }
+  }
+}

@@ -1,0 +1,153 @@
+{
+  "at": "2026-11-05T17:57:56.359223+00:00",
+  "method": "GET",
+  "path": "/api/analysis/jobs/bde3c2be424e4001ad19bcdd943d224a",
+  "request": null,
+  "http_status": 200,
+  "elapsed_ms": 28,
+  "response": {
+    "id": "bde3c2be424e4001ad19bcdd943d224a",
+    "document_id": 1,
+    "status": "running",
+    "error": null,
+    "run_id": null,
+    "created_at": "2026-11-05T17:57:56.317435+00:00",
+    "updated_at": "2026-11-05T17:57:56.350921+00:00",
+    "request": {
+      "document_id": 1,
+      "title": "Acceptance test S1",
+      "description": "Analyze the selected controlled test input using only its content.",
+      "task_type": null,
+      "profile": "industrial",
+      "analysis_mode": "risk_review",
+      "workflow": "pipeline",
+      "max_steps": null
+    },
+    "stages": [
+      {
+        "id": "validation",
+        "label": "Check document",
+        "description": "Validate the stored source and analysis settings.",
+        "status": "completed",
+        "message": "Document and settings checked",
+        "detail": "S1_inspection.pdf",
+        "started_at": "2026-11-05T17:57:56.342770+00:00",
+        "finished_at": "2026-11-05T17:57:56.348239+00:00",
+        "metadata": {
+          "profile": "industrial",
+          "mode": "risk_review"
+        },
+        "events": [
+          {
+            "at": "2026-11-05T17:57:56.342770+00:00",
+            "status": "running",
+            "message": "Checking the document and analysis settings",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T17:57:56.348239+00:00",
+            "status": "completed",
+            "message": "Document and settings checked",
+            "detail": "S1_inspection.pdf"
+          }
+        ]
+      },
+      {
+        "id": "extraction",
+        "label": "Extract text / OCR",
+        "description": "Read source pages and use local OCR where needed.",
+        "status": "running",
+        "message": "Reading source pages",
+        "detail": "S1_inspection.pdf",
+        "started_at": "2026-11-05T17:57:56.350921+00:00",
+        "finished_at": null,
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T17:57:56.350921+00:00",
+            "status": "running",
+            "message": "Reading source pages",
+            "detail": "S1_inspection.pdf"
+          }
+        ]
+      },
+      {
+        "id": "routing",
+        "label": "Plan analysis",
+        "description": "Check provider policy, select models, and prepare the document.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "vision",
+        "label": "Inspect images",
+        "description": "Describe visual input when the selected task needs it.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "knowledge",
+        "label": "Retrieve context",
+        "description": "Build local retrieval vectors and find relevant passages.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "reasoning",
+        "label": "Analyze content",
+        "description": "Generate a summary, match review terms, or extract literal fields.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "verification",
+        "label": "Verify sources",
+        "description": "Check citations and decide which findings need human review.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "deliverables",
+        "label": "Save results",
+        "description": "Save the run, findings, and downloadable report files.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      }
+    ],
+    "result": null,
+    "document": {
+      "id": 1,
+      "filename": "S1_inspection.pdf"
+    }
+  }
+}

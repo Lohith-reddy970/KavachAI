@@ -1,0 +1,268 @@
+{
+  "at": "2026-11-05T18:00:45.124201+00:00",
+  "method": "GET",
+  "path": "/api/agents/runs/1",
+  "request": null,
+  "http_status": 200,
+  "elapsed_ms": 23,
+  "response": {
+    "run": {
+      "id": 1,
+      "task_id": 1,
+      "scenario": "document:S1_inspection.pdf",
+      "status": "completed",
+      "verification_score": 100.0,
+      "evidence_backed": "1/1",
+      "started_at": "2026-11-05T18:00:21.931940+00:00",
+      "finished_at": "2026-11-05T18:00:44.743465+00:00",
+      "retired_sample": 0,
+      "analysis_profile": "industrial",
+      "analysis_mode": "risk_review"
+    },
+    "steps": [
+      {
+        "id": 1,
+        "run_id": 1,
+        "seq": 1,
+        "agent": "security_agent",
+        "message": "Provider policy checked",
+        "status": "completed",
+        "detail": "KAVACH_MODE=airgapped; local provider 'ollama' authorized; model connections are restricted by application policy; host isolation is deployment-managed.",
+        "started_at": "2026-11-05T18:00:21.945215+00:00",
+        "finished_at": "2026-11-05T18:00:21.945231+00:00"
+      },
+      {
+        "id": 2,
+        "run_id": 1,
+        "seq": 2,
+        "agent": "router_agent",
+        "message": "Task routed to qwen3:8b",
+        "status": "completed",
+        "detail": "task_type=reasoning; General analytical task; routing to qwen3:8b.",
+        "started_at": "2026-11-05T18:00:21.948582+00:00",
+        "finished_at": "2026-11-05T18:00:21.948589+00:00"
+      },
+      {
+        "id": 3,
+        "run_id": 1,
+        "seq": 3,
+        "agent": "router_agent",
+        "message": "Execution plan created",
+        "status": "completed",
+        "detail": "1. Parse source text and retain page provenance; OCR sparse pages if needed; 2. Bypass vision: the selected analysis uses extracted text; 3. Chunk source text and retrieve local context using embeddings and cosine similarity; 4. Assemble source-backed findings; retain model reasoning as advisory output; 5. Cross-check cited excerpts; apply severity, confidence, and explicit-review gates; 6. Generate local deliverables and persist the auditable run trace",
+        "started_at": "2026-11-05T18:00:21.952411+00:00",
+        "finished_at": "2026-11-05T18:00:21.952417+00:00"
+      },
+      {
+        "id": 4,
+        "run_id": 1,
+        "seq": 4,
+        "agent": "document_agent",
+        "message": "Uploaded document loaded",
+        "status": "completed",
+        "detail": "Loaded S1_inspection.pdf (1 page(s), 257 extracted characters; method=pdf-text).",
+        "started_at": "2026-11-05T18:00:21.956284+00:00",
+        "finished_at": "2026-11-05T18:00:21.956292+00:00"
+      },
+      {
+        "id": 5,
+        "run_id": 1,
+        "seq": 5,
+        "agent": "document_agent",
+        "message": "Document analysis prepared",
+        "status": "completed",
+        "detail": "Locally extracted text and page provenance are available to downstream agents; no external upload performed.",
+        "started_at": "2026-11-05T18:00:21.959741+00:00",
+        "finished_at": "2026-11-05T18:00:21.959748+00:00"
+      },
+      {
+        "id": 6,
+        "run_id": 1,
+        "seq": 6,
+        "agent": "vision_agent",
+        "message": "Vision analysis skipped",
+        "status": "skipped",
+        "detail": "No image input in this document; text files are handled by local extraction and source-term analysis.",
+        "started_at": "2026-11-05T18:00:21.970133+00:00",
+        "finished_at": "2026-11-05T18:00:21.970139+00:00"
+      },
+      {
+        "id": 7,
+        "run_id": 1,
+        "seq": 7,
+        "agent": "knowledge_agent",
+        "message": "Knowledge retrieved",
+        "status": "completed",
+        "detail": "Indexed 1 chunk(s) of S1_inspection.pdf locally; 1 relevant to the task.",
+        "started_at": "2026-11-05T18:00:21.980398+00:00",
+        "finished_at": "2026-11-05T18:00:21.980406+00:00"
+      },
+      {
+        "id": 8,
+        "run_id": 1,
+        "seq": 8,
+        "agent": "reasoning_agent",
+        "message": "Reasoning analysis captured",
+        "status": "completed",
+        "detail": "mode=risk_review; model=qwen3:8b; provider=ollama; advisory output (not independently verified): **Rationale:** The document indicates a critical crack on equipment T-401, which, if unaddressed, could compromise structural integrity, leading to equipment failure, safety hazards, or operational downtime. The observation requires engineer review before action, aligning with process-safety protocols. However, the document is explicitly labeled as \"test mat",
+        "started_at": "2026-11-05T18:00:44.593430+00:00",
+        "finished_at": "2026-11-05T18:00:44.593444+00:00"
+      },
+      {
+        "id": 9,
+        "run_id": 1,
+        "seq": 9,
+        "agent": "reasoning_agent",
+        "message": "Profile-based risk review completed",
+        "status": "completed",
+        "detail": "profile=industrial; mode=risk_review; matched 1 source sentences. Model analysis is advisory and does not override source-matched findings.",
+        "started_at": "2026-11-05T18:00:44.598507+00:00",
+        "finished_at": "2026-11-05T18:00:44.598517+00:00"
+      },
+      {
+        "id": 10,
+        "run_id": 1,
+        "seq": 10,
+        "agent": "verification_agent",
+        "message": "Evidence cross-check completed",
+        "status": "completed",
+        "detail": "1/1 finding(s) confirmed against the cited source pages (score 100.0%); 1 flagged for human review.",
+        "started_at": "2026-11-05T18:00:44.610791+00:00",
+        "finished_at": "2026-11-05T18:00:44.610802+00:00"
+      },
+      {
+        "id": 11,
+        "run_id": 1,
+        "seq": 11,
+        "agent": "deliverable_agent",
+        "message": "Report generated",
+        "status": "completed",
+        "detail": "Produced 5 deliverable file(s): docx, md, pdf, txt, xlsx.",
+        "started_at": "2026-11-05T18:00:44.670498+00:00",
+        "finished_at": "2026-11-05T18:00:44.670506+00:00"
+      }
+    ],
+    "findings": [
+      {
+        "id": 1,
+        "run_id": 1,
+        "title": "A critical crack was observed on equipment T-401 and requires repair.",
+        "description": "Matched risk terms: crack, critical, repair. A critical crack was observed on equipment T-401 and requires repair.",
+        "severity": "high",
+        "confidence": 90.0,
+        "equipment_id": "T-401",
+        "needs_review": 1,
+        "review_status": "approved",
+        "created_at": "2026-11-05T18:00:44.718192+00:00",
+        "review_reasons": [
+          "high-risk severity 'high'"
+        ],
+        "evidence": [
+          {
+            "id": 1,
+            "finding_id": 1,
+            "run_id": 1,
+            "source": "S1_inspection.pdf",
+            "page": 1,
+            "excerpt": "A critical crack was observed on equipment T-401 and requires repair.",
+            "extraction_method": "pdf-text",
+            "ocr_confidence": null,
+            "confidence": 90.0,
+            "created_at": "2026-11-05T18:00:44.721961+00:00",
+            "location": {
+              "char_start": 104,
+              "char_end": 173
+            }
+          }
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "id": 1,
+        "finding_id": 1,
+        "run_id": 1,
+        "source": "S1_inspection.pdf",
+        "page": 1,
+        "excerpt": "A critical crack was observed on equipment T-401 and requires repair.",
+        "extraction_method": "pdf-text",
+        "ocr_confidence": null,
+        "confidence": 90.0,
+        "created_at": "2026-11-05T18:00:44.721961+00:00",
+        "location": {
+          "char_start": 104,
+          "char_end": 173
+        }
+      }
+    ],
+    "deliverables": [
+      {
+        "id": 1,
+        "run_id": 1,
+        "name": "Document Analysis Report (Text)",
+        "filename": "kavach_report_run1.txt",
+        "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-180018-0713fb\\runtime\\generated\\kavach_report_run1.txt",
+        "fmt": "txt",
+        "size_bytes": 1585,
+        "created_at": "2026-11-05T18:00:44.725607+00:00"
+      },
+      {
+        "id": 2,
+        "run_id": 1,
+        "name": "Document Analysis Report (Markdown)",
+        "filename": "kavach_report_run1.md",
+        "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-180018-0713fb\\runtime\\generated\\kavach_report_run1.md",
+        "fmt": "md",
+        "size_bytes": 1704,
+        "created_at": "2026-11-05T18:00:44.729204+00:00"
+      },
+      {
+        "id": 3,
+        "run_id": 1,
+        "name": "Document Analysis Report (Word)",
+        "filename": "kavach_report_run1.docx",
+        "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-180018-0713fb\\runtime\\generated\\kavach_report_run1.docx",
+        "fmt": "docx",
+        "size_bytes": 35612,
+        "created_at": "2026-11-05T18:00:44.732817+00:00"
+      },
+      {
+        "id": 4,
+        "run_id": 1,
+        "name": "Document Fields and Findings (Excel)",
+        "filename": "kavach_report_run1.xlsx",
+        "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-180018-0713fb\\runtime\\generated\\kavach_report_run1.xlsx",
+        "fmt": "xlsx",
+        "size_bytes": 5018,
+        "created_at": "2026-11-05T18:00:44.736263+00:00"
+      },
+      {
+        "id": 5,
+        "run_id": 1,
+        "name": "Document Analysis Report (PDF)",
+        "filename": "kavach_report_run1.pdf",
+        "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-180018-0713fb\\runtime\\generated\\kavach_report_run1.pdf",
+        "fmt": "pdf",
+        "size_bytes": 1916,
+        "created_at": "2026-11-05T18:00:44.739952+00:00"
+      }
+    ],
+    "analysis": {
+      "model": "qwen3:8b",
+      "provider": "ollama",
+      "text": "**Rationale:**  \nThe document indicates a critical crack on equipment T-401, which, if unaddressed, could compromise structural integrity, leading to equipment failure, safety hazards, or operational downtime. The observation requires engineer review before action, aligning with process-safety protocols. However, the document is explicitly labeled as \"test material, not a real inspection,\" and no quantitative data (e.g., crack size, location, or stress analysis) is provided to assess risk severity or prioritize repair urgency.  \n\n**Uncertainty:**  \nThe absence of detailed technical parameters (e.g., crack dimensions, material stress thresholds, or inspection methodology) limits the ability to quantify risks or determine compliance with maintenance standards. The test nature of the document further raises questions about its relevance to real-world equipment integrity.  \n\n**Conclusion:**  \nA critical crack is noted, but insufficient data exists to evaluate risk magnitude or compliance. Engineer review is mandated, but further analysis requires additional evidence.",
+      "meta": {
+        "deterministic": false
+      }
+    },
+    "vision": null,
+    "extraction": {
+      "status": "ready",
+      "method": "pdf-text",
+      "page_count": 1,
+      "ocr_pages": 0,
+      "ocr_attempted_pages": 0,
+      "note": ""
+    }
+  }
+}

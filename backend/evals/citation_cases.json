@@ -1,0 +1,37 @@
+[
+  {
+    "name": "inspection-pages",
+    "profile": "industrial",
+    "pages": [
+      "The unit completed routine checks and the results were recorded.",
+      "Severe corrosion was observed on pump P-101 and repair is required.",
+      "Compressor K-220 vibration increased above the normal trend; monitor weekly."
+    ],
+    "expected_citations": [
+      {"page": 2, "contains": "Severe corrosion was observed on pump P-101"},
+      {"page": 3, "contains": "vibration increased above the normal trend"}
+    ]
+  },
+  {
+    "name": "general-report-pages",
+    "profile": "general",
+    "pages": [
+      "The project schedule was discussed at the quarterly meeting.",
+      "An overdue approval creates a delivery delay and requires follow-up."
+    ],
+    "expected_citations": [
+      {"page": 2, "contains": "overdue approval"}
+    ]
+  },
+  {
+    "name": "leak-location",
+    "profile": "industrial",
+    "pages": [
+      "The relief valve was returned to service after routine inspection.",
+      "A leak was observed at joint P-101; isolate the line and repair the seal."
+    ],
+    "expected_citations": [
+      {"page": 2, "contains": "leak was observed at joint P-101"}
+    ]
+  }
+]

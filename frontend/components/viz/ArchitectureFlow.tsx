@@ -4,9 +4,9 @@ const stages = [
   { label: "User", sub: "document request", icon: User, tone: "text-ink" },
   { label: "KAVACH AI", sub: "security · router · planner", icon: Shield, tone: "text-signal" },
   { label: "Local Agents", sub: "8 specialised agents", icon: Bot, tone: "text-signal" },
-  { label: "Local Models", sub: "open-weight, on GPU", icon: Cpu, tone: "text-signal" },
+  { label: "Local Models", sub: "configured local inference", icon: Cpu, tone: "text-signal" },
   { label: "Local Knowledge Base", sub: "RAG · vector store", icon: Database, tone: "text-signal" },
-  { label: "Deliverable", sub: "verified · human-reviewed", icon: FileCheck2, tone: "text-verified" },
+  { label: "Deliverable", sub: "source excerpts and review status", icon: FileCheck2, tone: "text-verified" },
 ];
 
 export function ArchitectureFlow() {

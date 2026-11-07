@@ -1,30 +1,30 @@
-# KAVACH AI — Sovereign On-Premise Agentic AI Workbench
-# One-command local stack. Nothing here reaches the public internet at runtime.
-#
-#   docker compose up --build
-#   → frontend  http://localhost:3000
-#   → backend   http://localhost:8000/api/health
-#
-# The backend runs with KAVACH_MODE=airgapped, so the application itself refuses
-# external model providers and non-loopback inference URLs. Compose does NOT
-# isolate the container network (its port must be reachable from the host
-# browser); enforce network-level egress blocking with your host firewall.
-
+# Local appliance: inference and backend share a network namespace so the
+# airgapped provider policy can keep using a loopback inference URL.
 services:
+  inference:
+    image: ollama/ollama:latest
+    environment:
+      OLLAMA_HOST: 127.0.0.1:11434
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
   backend:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
-    container_name: kavach-backend
+    network_mode: service:inference
+    depends_on:
+      - inference
     environment:
       KAVACH_MODE: airgapped
-      # Ollama is not part of this Compose stack; local model inference is used
-      # when running the backend directly on the host.
-      KAVACH_INFERENCE_PROVIDER: mock
-    ports:
-      - "8000:8000"
+      KAVACH_INFERENCE_PROVIDER: ollama
+      KAVACH_EMBEDDING_BACKEND: hash
+      OLLAMA_BASE_URL: http://127.0.0.1:11434
     volumes:
-      - ./demo-data:/app/demo-data
+      - ./data:/app/data
       - ./generated:/app/generated
     restart: unless-stopped
 
@@ -32,11 +32,11 @@ services:
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
-    container_name: kavach-frontend
-    environment:
-      NEXT_PUBLIC_API_BASE: http://localhost:8000
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - backend
     restart: unless-stopped
+
+volumes:
+  ollama-models:

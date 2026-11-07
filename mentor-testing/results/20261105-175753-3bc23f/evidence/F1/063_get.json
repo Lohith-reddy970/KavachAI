@@ -1,0 +1,55 @@
+{
+  "at": "2026-11-05T17:58:45.021989+00:00",
+  "method": "GET",
+  "path": "/api/documents",
+  "request": null,
+  "http_status": 200,
+  "elapsed_ms": 26,
+  "response": [
+    {
+      "id": 1,
+      "name": "S1_inspection.pdf",
+      "filename": "S1_inspection.pdf",
+      "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime\\uploads\\S1_inspection.pdf",
+      "doc_type": "pdf",
+      "size_bytes": 1882,
+      "pages": 1,
+      "extraction_method": "pdf-text",
+      "ocr_pages": 0,
+      "status": "analyzed",
+      "summary": "User-uploaded pdf document.",
+      "created_at": "2026-11-05T17:57:56.300421+00:00",
+      "retired_sample": 0
+    },
+    {
+      "id": 2,
+      "name": "S2_invoice.png",
+      "filename": "S2_invoice.png",
+      "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime\\uploads\\S2_invoice.png",
+      "doc_type": "png",
+      "size_bytes": 52873,
+      "pages": 1,
+      "extraction_method": "tesseract",
+      "ocr_pages": 1,
+      "status": "analyzed",
+      "summary": "User-uploaded png document.",
+      "created_at": "2026-11-05T17:58:19.621589+00:00",
+      "retired_sample": 0
+    },
+    {
+      "id": 3,
+      "name": "S3_project_record.txt",
+      "filename": "S3_project_record.txt",
+      "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime\\uploads\\S3_project_record.txt",
+      "doc_type": "txt",
+      "size_bytes": 193,
+      "pages": 1,
+      "extraction_method": "text",
+      "ocr_pages": 0,
+      "status": "analyzed",
+      "summary": "User-uploaded txt document.",
+      "created_at": "2026-11-05T17:58:36.830533+00:00",
+      "retired_sample": 0
+    }
+  ]
+}

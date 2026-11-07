@@ -8,16 +8,14 @@ pydantic>=2.6
 
 # OPTIONAL (import-guarded in code; the app STARTS even if these are absent).
 # Pure-python-ish and pip-installable offline-friendly:
-fpdf2>=2.7          # PDF generation (demo data + deliverables)
-Pillow>=10.0        # P&ID PNG generation
+fpdf2>=2.7          # PDF report generation
+Pillow>=10.0        # image loading and OCR preparation
 psutil>=5.9         # live CPU/RAM readings for /api/system/status
+pytesseract>=0.3.13 # local OCR adapter; the Tesseract executable is installed separately
+PyMuPDF>=1.24       # local PDF-page rendering for scanned-page OCR
 
 # Optional richer deliverables (guarded):
 python-docx>=1.1    # .docx reports
 openpyxl>=3.1       # .xlsx findings matrix
 reportlab>=4.0      # alternative PDF backend
 pypdf>=4.0          # text extraction from uploaded PDFs
-
-# Optional RAG upgrade (guarded; falls back to pure-python hash embeddings):
-# chromadb           # vector store (heavy; skip for a minimal offline install)
-# sentence-transformers  # real embeddings (heavy; skip for minimal install)

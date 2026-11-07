@@ -1,7 +1,6 @@
 "use client";
 
 import { Panel, PanelHeader, SourceChip } from "@/components/ui";
-import { auditLog } from "@/lib/data";
 import { useLive, fetchAuditLogs } from "@/lib/live";
 import { ScrollText } from "lucide-react";
 
@@ -13,8 +12,8 @@ const levelStyle: Record<string, { dot: string; text: string }> = {
 };
 
 export function AuditLogPanel() {
-  const { data: entries, source } = useLive(fetchAuditLogs, auditLog);
-  const rows = entries.length ? entries : auditLog;
+  const { data: entries, source } = useLive(fetchAuditLogs, []);
+  const rows = entries;
 
   return (
     <Panel className="flex flex-col">
@@ -42,9 +41,7 @@ export function AuditLogPanel() {
           })}
         </ul>
       </div>
-      <div className="border-t border-line px-3 py-2 font-mono text-2xs text-verified">
-        ✓ 0 external transmissions recorded this session
-      </div>
+      {source === "live" && !rows.length && <p className="p-4 text-xs text-ink-muted">No audit entries yet.</p>}
     </Panel>
   );
 }

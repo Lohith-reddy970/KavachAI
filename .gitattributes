@@ -1,0 +1,7 @@
+# Preserve document artifacts and test input hashes on every platform.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.docx binary
+*.xlsx binary

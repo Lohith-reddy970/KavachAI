@@ -20,8 +20,8 @@ class AnalysisProfile:
 PROFILES: Mapping[str, AnalysisProfile] = MappingProxyType({
     "general": AnalysisProfile(
         id="general",
-        name="General documents",
-        description="Broad review terms for reports, policies, correspondence, and records.",
+        name="General / everyday documents",
+        description="A starting point for any document: notes, reports, letters, and personal records.",
         risk_terms=MappingProxyType({
             "high": (
                 "critical", "urgent", "severe", "hazard", "unsafe", "breach",
@@ -31,7 +31,7 @@ PROFILES: Mapping[str, AnalysisProfile] = MappingProxyType({
             "medium": (
                 "risk", "issue", "delay", "overdue", "missing", "deviation",
                 "anomal", "defect", "damage", "error", "concern", "blocked",
-                "discrepancy", "exception", "vibration",
+                "discrepancy", "exception", "vibration", "not confirmed", "unresolved",
             ),
             "low": (
                 "recommend", "monitor", "follow-up", "follow up", "pending",
@@ -61,6 +61,50 @@ PROFILES: Mapping[str, AnalysisProfile] = MappingProxyType({
             ),
         }),
     ),
+    **{
+        profile_id: AnalysisProfile(
+            id=profile_id, name=name, description=description,
+            risk_terms=MappingProxyType({
+                severity: tuple(dict.fromkeys((*base_terms, *extra_terms.get(severity, ()))))
+                for severity, base_terms in {
+                    "high": ("critical", "urgent", "breach", "violation", "failed", "unsafe"),
+                    "medium": ("risk", "delay", "overdue", "missing", "issue", "unresolved", "not confirmed"),
+                    "low": ("pending", "follow-up", "recommend", "review required"),
+                }.items()
+            }),
+        )
+        for profile_id, name, description, extra_terms in (
+            ("business", "Business & projects", "Project updates, meeting notes, suppliers, deadlines, and approvals.", {
+                "high": ("blocked", "cancelled"), "medium": ("budget overrun", "not approved", "unassigned", "scope change"),
+                "low": ("action item", "sign-off"),
+            }),
+            ("education", "Education & research", "Assignments, course notes, research reports, and academic administration.", {
+                "high": ("plagiarism", "academic misconduct"),
+                "medium": ("late submission", "incomplete", "uncited", "withdrawn", "limitation"),
+                "low": ("revision", "resubmit"),
+            }),
+            ("finance", "Finance & procurement", "Invoices, expense records, budgets, payments, and purchase requests.", {
+                "high": ("fraud", "unauthorized", "unapproved payment"),
+                "medium": ("unpaid", "outstanding", "duplicate", "mismatch", "over budget", "late payment"),
+                "low": ("reconcile", "receipt required"),
+            }),
+            ("legal", "Contracts & policies", "Agreements, obligations, renewals, and policy documents.", {
+                "high": ("termination", "liability", "penalty"),
+                "medium": ("expired", "unsigned", "dispute", "non-compliance", "renewal", "obligation"),
+                "low": ("notice period", "clarification"),
+            }),
+            ("healthcare", "Healthcare administration", "Administrative records, scheduling, consent forms, and service procedures.", {
+                "high": ("privacy incident", "consent withdrawn"),
+                "medium": ("unsigned consent", "incomplete record", "missed appointment", "unavailable"),
+                "low": ("follow up", "reschedule"),
+            }),
+            ("hr", "People & HR", "Onboarding, staff policies, training records, and leave administration.", {
+                "high": ("harassment", "discrimination", "data exposure"),
+                "medium": ("incomplete onboarding", "training gap", "unapproved leave", "grievance"),
+                "low": ("probation", "follow up"),
+            }),
+        )
+    },
 })
 
 
@@ -78,7 +122,7 @@ ANALYSIS_MODES = (
     {
         "id": "extract_fields",
         "name": "Extract fields",
-        "description": "Extract dates, equipment identifiers, and measurements directly from text.",
+        "description": "Extract dates, amounts, contacts, owners, reference IDs, and measurements with source citations.",
     },
 )
 ANALYSIS_MODE_IDS = frozenset(mode["id"] for mode in ANALYSIS_MODES)

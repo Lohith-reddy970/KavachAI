@@ -39,7 +39,7 @@ def test_generation_for_role_passes_selected_model(monkeypatch):
             return GenerationResult("ok", model, self.name, 1, 1)
 
     monkeypatch.setattr(providers, "get_provider", lambda: CaptureProvider())
-    providers.generate_with_fallback("inspect this image", role="vision", images=[b"image"])
+    providers.generate("inspect this image", role="vision", images=[b"image"])
 
     assert calls["model"] == "llava:7b"
     assert calls["kwargs"] == {"images": [b"image"]}
@@ -71,12 +71,11 @@ def test_rag_uses_nomic_embedding_when_ollama_is_active(monkeypatch):
 
     monkeypatch.setattr(config, "INFERENCE_PROVIDER", "ollama")
     monkeypatch.setattr(providers, "get_provider", lambda: CaptureProvider())
-    monkeypatch.setattr(pipeline, "_ollama_embedding_failed", False)
-    monkeypatch.setattr(pipeline, "_active_embedding_backend", None)
+    monkeypatch.setattr(config, "EMBEDDING_BACKEND", "provider")
 
     assert pipeline.embed("local evidence") == [0.25, 0.75]
     assert calls == {"text": "local evidence", "model": "nomic-embed-text:latest"}
-    assert "nomic-embed-text" in pipeline.backend_info()["embedding_backend"]
+    assert "ollama" in pipeline.backend_info()["embedding_backend"]
 
 
 def test_planner_uses_other_text_model_for_its_local_choice(monkeypatch):
@@ -86,7 +85,7 @@ def test_planner_uses_other_text_model_for_its_local_choice(monkeypatch):
         calls["role"] = role
         return GenerationResult("inspect_document", "llama3.2:3b", "ollama", 1, 1)
 
-    monkeypatch.setattr(planner_agent, "generate_with_fallback", capture)
+    monkeypatch.setattr(planner_agent, "generate", capture)
     options = [
         planner_agent.PlannerDecision("inspect_document", "load docs"),
         planner_agent.PlannerDecision("search_knowledge", "retrieve context"),

@@ -1,534 +1,178 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import {
-  Panel,
-  PanelHeader,
-  PageTitle,
-  StatusPill,
-} from "@/components/ui";
-import { ExecutionTimeline } from "@/components/viz/ExecutionTimeline";
-import { FindingCard } from "@/components/viz/Findings";
-import { ReportView } from "@/components/viz/ReportView";
-import { PidViewer } from "@/components/viz/PidViewer";
-import { useKavach } from "@/lib/store";
-import { documents, findings, SAMPLE_TASK } from "@/lib/data";
-import { useLive, fetchAnalysisCatalog, fetchDocuments } from "@/lib/live";
-import { api, type AgentRunResponse, type AnalysisMode } from "@/lib/api";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { KDocument } from "@/lib/types";
-import { sampleAnalysisCatalog } from "@/lib/profiles";
-import {
-  RotateCcw,
-  FileText,
-  Terminal,
-  FileOutput,
-  Workflow,
-  Lock,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Panel, PanelHeader, PageTitle, SourceChip, StatusPill } from "@/components/ui";
+import { api, ApiError, type AnalysisJob, type AnalysisMode, type LiveRunDetail } from "@/lib/api";
+import { useLive, fetchDocuments, fetchAnalysisCatalog } from "@/lib/live";
+import { defaultAnalysisCatalog, useCases } from "@/lib/profiles";
+import { RunDetail } from "@/components/viz/LiveRuns";
+import { AnalysisFlow } from "@/components/viz/AnalysisFlow";
+
+const SAVED_JOB = "kavach.workbench.analysisJob";
+function rememberJob(id: string | null) {
+  try { if (id) localStorage.setItem(SAVED_JOB, id); else localStorage.removeItem(SAVED_JOB); } catch { /* Storage is optional. */ }
+}
+function reveal(element: HTMLElement | null) {
+  element?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+}
 
 export default function WorkbenchPage() {
-  const [task, setTask] = useState(SAMPLE_TASK);
-  const [selectedDocumentId, setSelectedDocumentId] = useState("");
-  const [analysisState, setAnalysisState] = useState<
-    "idle" | "running" | "done" | "error"
-  >("idle");
-  const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
+  const { data: documents, source } = useLive(fetchDocuments, []);
+  const { data: catalog } = useLive(fetchAnalysisCatalog, defaultAnalysisCatalog);
+  const [documentId, setDocumentId] = useState("");
   const [profile, setProfile] = useState("general");
-  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>("risk_review");
-  const { data: availableDocuments, source: documentSource } = useLive(
-    fetchDocuments,
-    documents,
-  );
-  const { data: analysisCatalog } = useLive(
-    fetchAnalysisCatalog,
-    sampleAnalysisCatalog,
-  );
-  const [agentState, setAgentState] = useState<"idle" | "running" | "error">(
-    "idle",
-  );
-  const [agentRun, setAgentRun] = useState<AgentRunResponse | null>(null);
-  const [agentError, setAgentError] = useState<string | null>(null);
-  const [tab, setTab] = useState<"pipeline" | "pid">("pipeline");
-  const phase = useKavach((s) => s.phase);
-  const startRun = useKavach((s) => s.startRun);
-  const reset = useKavach((s) => s.reset);
-  const progress = useKavach((s) => s.progress);
-  const logLines = useKavach((s) => s.logLines);
-  const showReport = useKavach((s) => s.showReport);
-  const openReport = useKavach((s) => s.openReport);
-  const closeReport = useKavach((s) => s.closeReport);
-
-  const started = phase !== "idle";
-  const finished = phase === "review" || phase === "complete";
-  const selectedDocument = availableDocuments.find(
-    (document) => document.id === selectedDocumentId,
-  );
-  const canAnalyzeSelectedDocument =
-    documentSource === "live" && !!selectedDocument && /^\d+$/.test(selectedDocument.id);
-  const needsReview = findings.filter(
-    (f) => !f.verified || f.reviewState === "needs-review",
-  );
+  const [mode, setMode] = useState<AnalysisMode>("risk_review");
+  const [task, setTask] = useState("Review this document for issues, missing information, and next actions. Cite the source for each finding.");
+  const [submitting, setSubmitting] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [job, setJob] = useState<AnalysisJob | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<LiveRunDetail | null>(null);
+  const submissionLock = useRef(false);
+  const restoring = useRef(false);
+  const flowRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const busy = submitting || Boolean(jobId && !job) || job?.status === "queued" || job?.status === "running";
 
   useEffect(() => {
-    if (
-      availableDocuments.length > 0 &&
-      !availableDocuments.some((document) => document.id === selectedDocumentId)
-    ) {
-      const textDocument = availableDocuments.find((document) =>
-        ["PDF", "DOCX", "TXT", "CSV", "PY"].includes(document.type),
-      );
-      setSelectedDocumentId((textDocument ?? availableDocuments[0]).id);
-    }
-  }, [availableDocuments, selectedDocumentId]);
-
-  async function analyzeSelectedDocument() {
-    if (!canAnalyzeSelectedDocument || !selectedDocument) {
-      setAnalysisState("error");
-      setAnalysisMessage("Select a document loaded from the backend before analysis.");
-      return;
-    }
-    setAnalysisState("running");
-    setAnalysisMessage(null);
     try {
-      const documentName = selectedDocument.name;
-      const title = analysisMode === "risk_review"
-        ? task || `Review ${documentName}`
-        : analysisMode === "summary"
-          ? `Summarize ${documentName}`
-          : `Extract fields from ${documentName}`;
-      const description = analysisMode === "risk_review"
-        ? "Review this document for risks and support each finding with source evidence."
-        : analysisMode === "summary"
-          ? "Summarize the document's purpose, key points, decisions, and open questions."
-          : "Extract dates, equipment identifiers, and measurements with exact source excerpts.";
-      const result = await api.analyzeDocument(
-        selectedDocumentId,
-        title,
-        description,
-        profile,
-        analysisMode,
-      );
-      setAnalysisState("done");
-      const outcome = analysisMode === "summary"
-        ? "summary generated"
-        : analysisMode === "extract_fields"
-          ? `${result.run.findings.length} field(s) extracted`
-          : `${result.run.findings.length} risk finding(s) recorded`;
-      setAnalysisMessage(`Run #${result.run.run.id}: ${outcome}. Open Agent Runs to view the result.`);
-    } catch (error) {
-      setAnalysisState("error");
-      setAnalysisMessage(
-        error instanceof Error ? error.message : "Document analysis failed",
-      );
-    }
-  }
+      const requested = new URLSearchParams(window.location.search).get("job");
+      const saved = requested || localStorage.getItem(SAVED_JOB);
+      if (saved) { restoring.current = true; rememberJob(saved); setJobId(saved); }
+    } catch { /* A fresh analysis still works without browser storage. */ }
+  }, []);
 
-  async function runPlanner() {
-    if (!task.trim() || documentSource !== "live") return;
-    setAgentState("running");
-    setAgentError(null);
-    try {
-      setAgentRun(await api.agentRun(task.trim().slice(0, 2000)));
-      setAgentState("idle");
-    } catch (error) {
-      setAgentRun(null);
-      setAgentState("error");
-      setAgentError(
-        error instanceof Error ? error.message : "Agentic run failed",
-      );
-    }
-  }
-
-  return (
-    <div>
-      <PageTitle eyebrow="Agentic Workspace" title="Workbench">
-        <StatusPill
-          tone={
-            finished ? "verified" : phase === "running" ? "signal" : "muted"
-          }
-          pulse={phase === "running"}
-        >
-          {phase === "idle"
-            ? "Ready"
-            : phase === "running"
-              ? `Executing · ${progress}%`
-              : "Awaiting Review"}
-        </StatusPill>
-      </PageTitle>
-
-      <div className="space-y-4">
-        {/* Tab bar */}
-        <div className="flex items-center gap-1 border-b border-line">
-            {(
-              [
-                ["pipeline", "Agent Pipeline"],
-                ["pid", "P&ID Analysis"],
-              ] as const
-            ).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={cn(
-                  "-mb-px border-b-2 px-3 py-2 font-mono text-2xs uppercase tracking-[0.08em] transition-colors",
-                  tab === key
-                    ? "border-signal text-signal"
-                    : "border-transparent text-ink-muted hover:text-ink",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-        </div>
-
-          {tab === "pid" ? (
-            <>
-              <Panel>
-                <PanelHeader
-                  title="Multimodal P&ID Analysis"
-                  sub="Vision model · region detection linked to corpus evidence"
-                  icon={<FileText className="h-4 w-4" />}
-                />
-                <div className="p-4">
-                  <PidViewer />
-                </div>
-              </Panel>
-            </>
-          ) : (
-            <>
-              {!started ? (
-                <Panel>
-                  <PanelHeader
-                    title="Document analysis"
-                    sub="Choose a source, profile, and task"
-                    icon={<FileText className="h-4 w-4" />}
-                    right={
-                      <Link href="/vault" className="font-mono text-2xs text-signal hover:underline">
-                        open document vault →
-                      </Link>
-                    }
-                  />
-                  <div className="space-y-4 p-4 sm:p-5">
-                    <label className="block">
-                      <span className="eyebrow mb-1.5 block">Analysis request</span>
-                      <textarea
-                        value={task}
-                        onChange={(e) => setTask(e.target.value)}
-                        rows={2}
-                        className="w-full resize-y rounded-[3px] border border-line bg-surface-inset px-3 py-2.5 text-sm text-ink outline-none placeholder:text-ink-faint focus:border-signal/50"
-                        placeholder="Review the selected document and cite relevant passages."
-                      />
-                    </label>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <label className="block">
-                        <span className="eyebrow mb-1.5 block">Profile</span>
-                        <select
-                          value={profile}
-                          onChange={(e) => setProfile(e.target.value)}
-                          className="w-full rounded-[3px] border border-line bg-surface-inset px-3 py-2.5 text-sm text-ink outline-none focus:border-signal/50"
-                        >
-                          {analysisCatalog.profiles.map((item) => (
-                            <option key={item.id} value={item.id}>{item.name}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className="block">
-                        <span className="eyebrow mb-1.5 block">Task</span>
-                        <select
-                          value={analysisMode}
-                          onChange={(e) => setAnalysisMode(e.target.value as AnalysisMode)}
-                          className="w-full rounded-[3px] border border-line bg-surface-inset px-3 py-2.5 text-sm text-ink outline-none focus:border-signal/50"
-                        >
-                          {analysisCatalog.analysis_modes.map((item) => (
-                            <option key={item.id} value={item.id}>{item.name}</option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-                    <p className="-mt-2 text-xs text-ink-muted">
-                      These settings apply to document analysis. The agentic planner runs its own sample workflow.
-                    </p>
-
-                    <div className="grid gap-3 border-t border-line pt-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                      <label className="block min-w-0">
-                        <span className="eyebrow mb-1.5 block">
-                          Source document <span className="text-ink-faint">/ {availableDocuments.length} available</span>
-                        </span>
-                        <select
-                          value={selectedDocumentId}
-                          onChange={(e) => setSelectedDocumentId(e.target.value)}
-                          className="w-full rounded-[3px] border border-line bg-surface-inset px-3 py-2.5 text-sm text-ink outline-none focus:border-signal/50"
-                        >
-                          {availableDocuments.map((d) => (
-                            <option key={d.id} value={d.id}>{d.name}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <button
-                        onClick={analyzeSelectedDocument}
-                        disabled={analysisState === "running" || !canAnalyzeSelectedDocument}
-                        className="btn btn-primary min-h-10 whitespace-nowrap"
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                        {analysisState === "running" ? "Analyzing…" : "Analyze document"}
-                      </button>
-                    </div>
-
-                    {analysisState === "running" && (
-                      <p aria-live="polite" className="font-mono text-2xs text-ink-muted">
-                        Local model starting if needed. Keep this page open; first analysis can take a minute.
-                      </p>
-                    )}
-
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
-                      <span className="flex items-center gap-1.5 font-mono text-2xs text-ink-muted">
-                        <Lock className="h-3.5 w-3.5 text-verified" /> Local processing · source citations retained
-                      </span>
-                      <button
-                        onClick={runPlanner}
-                        disabled={agentState === "running" || documentSource !== "live" || !task.trim()}
-                        className="btn btn-ghost"
-                      >
-                        <Workflow className="h-3.5 w-3.5" />
-                        {agentState === "running" ? "Planning…" : "Run agentic planner"}
-                      </button>
-                    </div>
-
-                    {analysisMessage && (
-                      <p className={cn(
-                        "rounded-[3px] border px-3 py-2 font-mono text-2xs",
-                        analysisState === "error"
-                          ? "border-danger/30 bg-danger/5 text-danger"
-                          : "border-verified/30 bg-verified/5 text-verified",
-                      )}>
-                        {analysisMessage}
-                      </p>
-                    )}
-                    {documentSource !== "live" && (
-                      <p className="font-mono text-2xs text-ink-faint">
-                        Backend offline — live analysis is unavailable. The sample workflow remains available from the top bar.
-                      </p>
-                    )}
-                  </div>
-                </Panel>
-              ) : (
-                <Panel className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5">
-                  <div>
-                    <p className="eyebrow mb-1">Sample workflow / {phase === "running" ? "in progress" : "complete"}</p>
-                    <p className="font-display text-xl font-semibold uppercase tracking-wide text-ink">
-                      {phase === "running" ? "Processing local sample" : "Sample run ready for review"}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs text-ink-muted">{progress}%</span>
-                    <button onClick={reset} className="btn btn-ghost">
-                      <RotateCcw className="h-3.5 w-3.5" /> Reset
-                    </button>
-                  </div>
-                </Panel>
-              )}
-
-              {agentError && (
-                <p className="rounded-[3px] border border-danger/30 bg-danger/5 px-3 py-2 font-mono text-2xs text-danger">
-                  Agentic run failed: {agentError}
-                </p>
-              )}
-              {agentRun && <PlannerTrace run={agentRun} />}
-
-              {started && (
-                <>
-                  <Panel>
-                    <PanelHeader
-                      title="Run trace"
-                      sub="Select a step to inspect its source and result"
-                      right={
-                        <span className="font-mono text-2xs text-ink-faint">
-                          {progress}% · {phase === "running" ? "running" : "complete"}
-                        </span>
-                      }
-                    />
-                    <div className="p-4">
-                      <ExecutionTimeline />
-                    </div>
-                  </Panel>
-
-                  <details className="panel overflow-hidden">
-                    <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3">
-                      <span className="flex items-center gap-2 font-display text-base font-semibold uppercase tracking-wide text-ink">
-                        <Terminal className="h-4 w-4 text-signal" /> Run log
-                      </span>
-                      <span className="font-mono text-2xs uppercase tracking-wider text-ink-faint">
-                        expand
-                      </span>
-                    </summary>
-                    <div className="border-t border-line bg-surface-inset p-4">
-                      <pre className="max-h-64 overflow-auto whitespace-pre-wrap font-mono text-2xs leading-relaxed text-ink-muted">
-                        {logLines.join("\n")}
-                        {phase === "running" && (
-                          <span className="animate-blip text-signal">▊</span>
-                        )}
-                      </pre>
-                    </div>
-                  </details>
-
-                  {/* Verification + findings */}
-                  {finished && (
-                    <>
-                      <Panel className="animate-fadein">
-                        <PanelHeader
-                          title="Verification"
-                          sub="Evidence cross-check by the Verification Agent"
-                          right={
-                            <StatusPill tone="verified">
-                              Verified 94%
-                            </StatusPill>
-                          }
-                        />
-                        <div className="grid gap-3 p-4 sm:grid-cols-4">
-                          <VStat
-                            label="Verification Score"
-                            value="94%"
-                            tone="text-verified"
-                          />
-                          <VStat
-                            label="Evidence-Backed"
-                            value="8 / 9"
-                            tone="text-signal"
-                          />
-                          <VStat
-                            label="Needs Human Review"
-                            value="1"
-                            tone="text-caution"
-                          />
-                          <div className="flex items-center">
-                            <button
-                              onClick={openReport}
-                              className="btn btn-primary w-full shadow-glow"
-                            >
-                              <FileOutput className="h-3.5 w-3.5" /> Open
-                              Engineering Review
-                            </button>
-                          </div>
-                        </div>
-                      </Panel>
-
-                      <Panel className="animate-fadein">
-                        <PanelHeader
-                          title="Human Review Required"
-                          sub="AI recommends · Reviewer decides"
-                          right={
-                            <StatusPill tone="caution" dot={false}>
-                              {needsReview.length} pending
-                            </StatusPill>
-                          }
-                        />
-                        <div className="space-y-2.5 p-4">
-                          {needsReview.map((f) => (
-                            <FindingCard key={f.id} finding={f} showReview />
-                          ))}
-                        </div>
-                      </Panel>
-                    </>
-                  )}
-                </>
-              )}
-            </>
-          )}
-      </div>
-
-      {/* Report modal */}
-      {showReport && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-canvas/80 p-4 backdrop-blur-sm"
-          onClick={closeReport}
-        >
-          <div
-            className="panel-raised h-[88vh] w-full max-w-4xl overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ReportView onClose={closeReport} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function VStat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: string;
-}) {
-  return (
-    <div className="rounded-[3px] border border-line bg-surface-inset p-3">
-      <div className="eyebrow mb-1">{label}</div>
-      <div className={cn("font-display text-2xl font-bold", tone)}>{value}</div>
-    </div>
-  );
-}
-
-/** The planner's own decisions for a bounded agentic run on the backend. */
-function PlannerTrace({ run }: { run: AgentRunResponse }) {
-  const plan = run.planner;
-  const status = run.run.status;
-  return (
-    <Panel className="animate-fadein">
-      <PanelHeader
-        title={`Agentic Planner · Run #${run.run.id}`}
-        sub={`${plan.steps_used} of ${plan.max_steps} steps · stop: ${plan.stop_reason.replace(/_/g, " ")} · provider ${plan.provider}`}
-        icon={<Workflow className="h-4 w-4" />}
-        right={
-          <StatusPill
-            tone={
-              status === "completed"
-                ? "verified"
-                : status === "awaiting_review"
-                  ? "caution"
-                  : "danger"
-            }
-            dot={false}
-          >
-            {status.replace("_", " ")}
-          </StatusPill>
+  useEffect(() => {
+    if (!jobId) return;
+    let disposed = false;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      try {
+        const snapshot = await api.analysisJob(jobId!);
+        if (disposed) return;
+        setJob(snapshot);
+        setConnectionError(null);
+        if (restoring.current) {
+          setDocumentId(String(snapshot.document_id)); setProfile(snapshot.request.profile);
+          setMode(snapshot.request.analysis_mode); setTask(snapshot.request.description || snapshot.request.title);
+          restoring.current = false;
         }
-      />
-      <ol className="divide-y divide-line">
-        {plan.trace.map((t) => (
-          <li key={t.step} className="flex gap-3 px-4 py-2">
-            <span className="font-mono text-2xs text-signal">
-              {String(t.step).padStart(2, "0")}
-            </span>
-            <div className="flex-1">
-              <span className="font-mono text-xs text-ink">{t.action}</span>
-              <p className="text-2xs text-ink-muted">{t.reason}</p>
-            </div>
-            <span
-              className={cn(
-                "font-mono text-2xs",
-                t.status === "completed" ? "text-verified" : "text-danger",
-              )}
-            >
-              {t.status}
-            </span>
-          </li>
-        ))}
-      </ol>
-      <div className="flex items-center justify-between gap-2 border-t border-line px-4 py-2.5 font-mono text-2xs text-ink-muted">
-        <span>
-          {run.findings.length} finding(s) ·{" "}
-          {run.findings.filter((f) => f.needs_review).length} held for human
-          review
-        </span>
-        <Link href="/runs" className="text-signal hover:underline">
-          Review in Agent Runs →
-        </Link>
+        if (snapshot.result) setResult(snapshot.result.run);
+        if (snapshot.status === "queued" || snapshot.status === "running") timer = setTimeout(poll, 1000);
+      } catch (err) {
+        if (disposed) return;
+        if (err instanceof ApiError && err.status === 404) {
+          rememberJob(null); setJobId(null); setJob(null);
+          setError("The previous analysis job is no longer available. You can start a new analysis.");
+        } else {
+          setConnectionError("Progress connection interrupted. Reconnecting to the same saved analysis...");
+          timer = setTimeout(poll, 2000);
+        }
+      }
+    }
+    void poll();
+    return () => { disposed = true; clearTimeout(timer); };
+  }, [jobId]);
+
+  useEffect(() => { if (job?.status === "queued" || job?.status === "running") reveal(flowRef.current); }, [job?.id]);
+  useEffect(() => { if (result) reveal(resultRef.current); }, [result?.run.id]);
+
+  useEffect(() => {
+    if (documents.length && !documents.some((d) => d.id === documentId)) setDocumentId(documents[0].id);
+  }, [documents, documentId]);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("profile");
+    const preset = useCases.find((item) => item.profile === requested);
+    if (preset) { setProfile(preset.profile); setMode(preset.mode); setTask(preset.request); }
+    const requestedMode = params.get("mode");
+    if (requestedMode === "risk_review" || requestedMode === "summary" || requestedMode === "extract_fields") {
+      setMode(requestedMode);
+      const example = useCases.find((item) => item.mode === requestedMode);
+      if (example) setTask(requestedMode === "risk_review"
+        ? "Review this document for issues, missing information, and next actions. Cite the source for each finding."
+        : example.request);
+    }
+  }, []);
+
+  async function run(planner: boolean) {
+    if (submissionLock.current) return;
+    submissionLock.current = true;
+    setSubmitting(true); setError(null); setResult(null); setConnectionError(null);
+    try {
+      const snapshot = await api.startAnalysis(documentId, task, profile, mode, planner);
+      rememberJob(snapshot.id); setJob(snapshot); setJobId(snapshot.id);
+      const url = new URL(window.location.href);
+      url.searchParams.set("job", snapshot.id);
+      window.history.replaceState(null, "", url);
+      if (snapshot.result) setResult(snapshot.result.run);
+    } catch (err) { setError(err instanceof Error ? err.message : "Analysis failed"); }
+    finally { setSubmitting(false); submissionLock.current = false; }
+  }
+  async function review(id: number, decision: "approve" | "reject") {
+    if (!result) return;
+    try { await api.reviewFinding(id, decision); setResult(await api.run(result.run.id)); }
+    catch (err) { setError(err instanceof Error ? err.message : "Review failed"); }
+  }
+  const disabled = busy || source !== "live" || !documents.some((d) => d.id === documentId) || !task.trim();
+  return <div>
+    <PageTitle eyebrow="Document analysis" title="Workbench"><SourceChip source={source} /></PageTitle>
+    <Panel><PanelHeader title="Analyze a stored document" right={<Link href="/vault" className="text-sm text-signal">Upload a document</Link>} />
+      <div className="space-y-4 p-4">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {useCases.map((item) => <button key={item.profile} disabled={busy} onClick={() => { setProfile(item.profile); setMode(item.mode); setTask(item.request); }} className="rounded border border-line p-3 text-left hover:border-signal">
+            <span className="block text-sm font-semibold">{item.title}</span><span className="text-xs text-ink-muted">{item.description}</span>
+          </button>)}
+        </div>
+        <label className="block"><span className="eyebrow block">Source document</span>
+          <select disabled={busy} value={documentId} onChange={(e) => setDocumentId(e.target.value)} className="w-full rounded border border-line bg-surface p-2">
+            {!documents.length && <option value="">No documents available</option>}
+            {documents.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+        </label>
+        {documents.find((d) => d.id === documentId)?.type.match(/^(PNG|JPG|JPEG)$/) && <p className="text-xs text-ink-muted">
+          This image will be inspected by the local vision model in every analysis mode. Summary describes the image; Extract fields returns supported literal values from OCR text. Visual observations appear separately from fields and issue matches.
+        </p>}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label><span className="eyebrow block">Profile</span><select disabled={busy} value={profile} onChange={(e) => setProfile(e.target.value)} className="w-full rounded border border-line bg-surface p-2">{catalog.profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
+          <label><span className="eyebrow block">Analysis mode</span><select disabled={busy} value={mode} onChange={(e) => setMode(e.target.value as AnalysisMode)} className="w-full rounded border border-line bg-surface p-2">{catalog.analysis_modes.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select></label>
+        </div>
+        <label className="block"><span className="eyebrow block">Analysis request</span><textarea disabled={busy} value={task} onChange={(e) => setTask(e.target.value)} rows={3} maxLength={2000} className="w-full rounded border border-line bg-surface p-2" /></label>
+        <div className="flex flex-wrap gap-2"><button disabled={disabled} onClick={() => run(false)} className="btn btn-primary">{busy ? "Processing..." : "Analyze document"}</button><button disabled={disabled} onClick={() => run(true)} className="btn btn-ghost">Run bounded planner</button></div>
+        {submitting && <p role="status" className="text-sm text-ink-muted">Starting a saved local analysis...</p>}
+        {jobId && !job && <p role="status" className="text-sm text-ink-muted">Restoring your saved analysis...</p>}
+        {source === "live" && !documents.length && <p className="text-sm text-ink-muted">Upload your first document in the Document Vault.</p>}
+        {source === "unavailable" && <p role="alert" className="text-sm text-danger">Backend unavailable. Connect the local service to analyze documents.</p>}
+        {error && <p role="alert" className="text-sm text-danger">{error}</p>}
       </div>
     </Panel>
-  );
+    {job && <div ref={flowRef} className="mt-4 scroll-mt-20"><AnalysisFlow job={job} /></div>}
+    {connectionError && <p role="status" className="mt-3 rounded border border-caution/30 p-3 text-sm text-caution">{connectionError}</p>}
+    {result && <div ref={resultRef} className="mt-4 scroll-mt-20"><Panel>
+      <PanelHeader title={`Analysis results / Run #${result.run.id}`} sub={job?.document?.filename}
+        right={<StatusPill tone={result.run.status === "awaiting_review" ? "caution" : result.run.status === "halted" ? "danger" : "verified"}>
+          {result.run.status.replaceAll("_", " ")}
+        </StatusPill>} />
+      <div className="space-y-5 p-4 sm:p-5">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <ResultStat label="Pages read" value={result.extraction?.page_count ?? "Unavailable"} />
+          <ResultStat label="Pages using OCR" value={result.extraction?.ocr_pages ?? "Unavailable"} />
+          <ResultStat label={result.run.analysis_mode === "extract_fields" ? "Fields extracted" : "Source matches"} value={result.findings.length} />
+          <ResultStat label="Awaiting review" value={result.findings.filter((f) => f.needs_review && f.review_status === "pending").length} />
+        </div>
+        {result.extraction?.note && <p className="rounded border border-caution/30 p-3 text-xs text-caution">Extraction note: {result.extraction.note}</p>}
+        <RunDetail detail={result} onReview={review} showTrace={false} />
+        <div className="flex flex-wrap gap-4">
+          <Link href={`/runs/${result.run.id}`} className="inline-block text-sm text-signal hover:underline">Open saved run and full execution trace</Link>
+          {job && <Link href={`/workbench?job=${job.id}`} className="inline-block text-sm text-signal hover:underline">Saved Workbench result link</Link>}
+        </div>
+      </div>
+    </Panel></div>}
+    {job?.status === "error" && job.run_id && <Link href={`/runs/${job.run_id}`} className="mt-3 inline-block text-sm text-signal">Inspect saved error run #{job.run_id}</Link>}
+  </div>;
+}
+
+function ResultStat({ label, value }: { label: string; value: string | number }) {
+  return <div className="rounded border border-line bg-surface-inset p-3"><p className="eyebrow">{label}</p><p className="mt-2 font-display text-2xl font-semibold text-ink">{value}</p></div>;
 }

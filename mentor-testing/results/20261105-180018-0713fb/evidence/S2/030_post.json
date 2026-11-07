@@ -1,0 +1,27 @@
+{
+  "at": "2026-11-05T18:00:45.196365+00:00",
+  "method": "POST",
+  "path": "/api/documents/upload",
+  "request": {
+    "filename": "S2_invoice.png",
+    "bytes": 52873,
+    "sha256": "a0ec9ece3bf400cb327267851b27959f8972b9ccaae5cfd150339349401ae5fe"
+  },
+  "http_status": 200,
+  "elapsed_ms": 18,
+  "response": {
+    "id": 2,
+    "name": "S2_invoice.png",
+    "filename": "S2_invoice.png",
+    "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-180018-0713fb\\runtime\\uploads\\S2_invoice.png",
+    "doc_type": "png",
+    "size_bytes": 52873,
+    "pages": 0,
+    "extraction_method": "",
+    "ocr_pages": 0,
+    "status": "uploaded",
+    "summary": "User-uploaded png document.",
+    "created_at": "2026-11-05T18:00:45.186970+00:00",
+    "retired_sample": 0
+  }
+}

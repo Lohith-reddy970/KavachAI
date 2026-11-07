@@ -26,8 +26,8 @@ class SecurityAgent(BaseAgent):
         }
         ctx.add_step(
             self.name,
-            "Security perimeter verified",
+            "Provider policy checked",
             detail=f"KAVACH_MODE={mode}; local provider '{provider.name}' authorized; "
-                   "outbound network blocked.",
+                   "model connections are restricted by application policy; host isolation is deployment-managed.",
         )
         return ctx

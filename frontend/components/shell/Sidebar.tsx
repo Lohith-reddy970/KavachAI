@@ -2,25 +2,33 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { nav } from "./nav";
 import { cn } from "@/lib/utils";
-import { systemStatus } from "@/lib/data";
 import { usePolledSystem } from "@/lib/live";
 import { ShieldHalf } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  useEffect(() => {
+    // Workbench is the largest route. Prepare it after the shell becomes idle
+    // so the first navigation does not wait for its development compilation.
+    const timer = window.setTimeout(() => router.prefetch("/workbench"), 250);
+    return () => window.clearTimeout(timer);
+  }, [router]);
   const liveSystem = usePolledSystem(5000);
-  const gpuPct = liveSystem?.gpu ?? systemStatus.gpu;
+  const gpuPct = liveSystem?.gpu ?? null;
   const gpuLabel = !liveSystem
-    ? "SAMPLE GPU"
+    ? "GPU unavailable"
     : liveSystem.gpuSource === "hardware"
       ? "LOCAL GPU"
-      : "GPU (SIM)";
+      : "GPU unavailable";
   const vramLabel =
     liveSystem?.vramUsedGb != null && liveSystem?.vramTotalGb != null
       ? `${liveSystem.vramUsedGb} / ${liveSystem.vramTotalGb} GB`
-      : "sample";
+      : "unavailable";
   return (
     <aside className="fixed inset-y-0 left-0 z-30 flex w-14 flex-col border-r border-rail-line bg-rail text-rail-ink shadow-[8px_0_24px_-20px_rgba(10,16,12,0.7)] md:w-[236px]">
       {/* Brand */}
@@ -34,7 +42,7 @@ export function Sidebar() {
             KAVACH<span className="text-rail-accent"> AI</span>
           </div>
           <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-rail-muted">
-            Field System · 01
+             Private Document AI
           </div>
         </div>
       </div>
@@ -53,6 +61,10 @@ export function Sidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  aria-label={item.label}
+                  title={item.label}
+                  onMouseEnter={() => router.prefetch(item.href)}
+                  onFocus={() => router.prefetch(item.href)}
                   className={cn(
                     "group flex items-center justify-center gap-3 rounded-[3px] border border-transparent px-2.5 py-2 transition-colors md:justify-start",
                     active
@@ -92,18 +104,18 @@ export function Sidebar() {
           <span className="eyebrow text-rail-faint">Local node</span>
           <span className="pill border-rail-accent/50 bg-rail-accent/15 text-rail-accent">
             <span className="led animate-blip bg-rail-accent" />
-            READY
+            {liveSystem ? "CONNECTED" : "OFFLINE"}
           </span>
         </div>
         <div className="mb-2">
           <div className="mb-1 flex items-center justify-between font-mono text-2xs text-rail-muted">
             <span>{gpuLabel}</span>
-            <span className="text-rail-ink">{gpuPct}%</span>
+            <span className="text-rail-ink">{gpuPct == null ? "?" : `${gpuPct ?? 0}%`}</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-rail-raised">
             <div
               className="h-full rounded-full bg-rail-meter"
-              style={{ width: `${gpuPct}%` }}
+              style={{ width: `${gpuPct == null ? "?" : `${gpuPct ?? 0}%`}` }}
             />
           </div>
           <div className="mt-1 font-mono text-2xs text-rail-faint">
@@ -111,7 +123,7 @@ export function Sidebar() {
           </div>
         </div>
         <ul className="grid grid-cols-2 gap-1">
-          {systemStatus.services.slice(0, 8).map((s) => (
+          {(liveSystem?.services ?? []).slice(0, 8).map((s) => (
             <li
               key={s.name}
               className="flex items-center gap-1.5 font-mono text-2xs text-rail-muted"

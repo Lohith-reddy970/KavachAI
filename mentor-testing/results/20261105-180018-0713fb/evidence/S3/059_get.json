@@ -1,0 +1,280 @@
+{
+  "at": "2026-11-05T18:01:09.692913+00:00",
+  "method": "GET",
+  "path": "/api/analysis/jobs/99a598ffa146409ba34886f40b5f1765",
+  "request": null,
+  "http_status": 200,
+  "elapsed_ms": 22,
+  "response": {
+    "id": "99a598ffa146409ba34886f40b5f1765",
+    "document_id": 3,
+    "status": "running",
+    "error": null,
+    "run_id": 3,
+    "created_at": "2026-11-05T18:01:02.523423+00:00",
+    "updated_at": "2026-11-05T18:01:09.562086+00:00",
+    "request": {
+      "document_id": 3,
+      "title": "Acceptance test S3",
+      "description": "Analyze the selected controlled test input using only its content.",
+      "task_type": null,
+      "profile": "business",
+      "analysis_mode": "extract_fields",
+      "workflow": "planner",
+      "max_steps": 10
+    },
+    "stages": [
+      {
+        "id": "validation",
+        "label": "Check document",
+        "description": "Validate the stored source and analysis settings.",
+        "status": "completed",
+        "message": "Document and planner settings checked",
+        "detail": "S3_project_record.txt",
+        "started_at": null,
+        "finished_at": "2026-11-05T18:01:02.546522+00:00",
+        "metadata": {
+          "profile": "business",
+          "mode": "extract_fields"
+        },
+        "events": [
+          {
+            "at": "2026-11-05T18:01:02.546522+00:00",
+            "status": "completed",
+            "message": "Document and planner settings checked",
+            "detail": "S3_project_record.txt"
+          }
+        ]
+      },
+      {
+        "id": "extraction",
+        "label": "Extract text / OCR",
+        "description": "Read source pages and use local OCR where needed.",
+        "status": "completed",
+        "message": "Read 1 page(s); OCR supplied 0 page(s)",
+        "detail": "",
+        "started_at": "2026-11-05T18:01:02.549532+00:00",
+        "finished_at": "2026-11-05T18:01:02.560137+00:00",
+        "metadata": {
+          "status": "ready",
+          "method": "text",
+          "page_count": 1,
+          "ocr_pages": 0,
+          "ocr_attempted_pages": 0,
+          "note": "",
+          "characters": 186
+        },
+        "events": [
+          {
+            "at": "2026-11-05T18:01:02.549532+00:00",
+            "status": "running",
+            "message": "Reading source pages",
+            "detail": "S3_project_record.txt"
+          },
+          {
+            "at": "2026-11-05T18:01:02.560137+00:00",
+            "status": "completed",
+            "message": "Read 1 page(s); OCR supplied 0 page(s)",
+            "detail": ""
+          }
+        ]
+      },
+      {
+        "id": "routing",
+        "label": "Plan analysis",
+        "description": "Check provider policy, select models, and prepare the document.",
+        "status": "completed",
+        "message": "Planner chose: finish",
+        "detail": "All required steps are complete.",
+        "started_at": "2026-11-05T18:01:02.584130+00:00",
+        "finished_at": "2026-11-05T18:01:09.492118+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T18:01:09.440231+00:00",
+            "status": "completed",
+            "message": "Planner chose: reason",
+            "detail": "Evidence gathered; ready to synthesize findings."
+          },
+          {
+            "at": "2026-11-05T18:01:09.443710+00:00",
+            "status": "completed",
+            "message": "Planner chose: reason",
+            "detail": "Evidence gathered; ready to synthesize findings."
+          },
+          {
+            "at": "2026-11-05T18:01:09.458142+00:00",
+            "status": "running",
+            "message": "Choosing the next permitted action",
+            "detail": "Planner step 4 of 10"
+          },
+          {
+            "at": "2026-11-05T18:01:09.461800+00:00",
+            "status": "completed",
+            "message": "Planner chose: verify",
+            "detail": "Findings exist but are not verified."
+          },
+          {
+            "at": "2026-11-05T18:01:09.465950+00:00",
+            "status": "completed",
+            "message": "Planner chose: verify",
+            "detail": "Findings exist but are not verified."
+          },
+          {
+            "at": "2026-11-05T18:01:09.483983+00:00",
+            "status": "running",
+            "message": "Choosing the next permitted action",
+            "detail": "Planner step 5 of 10"
+          },
+          {
+            "at": "2026-11-05T18:01:09.488118+00:00",
+            "status": "completed",
+            "message": "Planner chose: finish",
+            "detail": "All required steps are complete."
+          },
+          {
+            "at": "2026-11-05T18:01:09.492118+00:00",
+            "status": "completed",
+            "message": "Planner chose: finish",
+            "detail": "All required steps are complete."
+          }
+        ]
+      },
+      {
+        "id": "vision",
+        "label": "Inspect images",
+        "description": "Describe visual input when the selected task needs it.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "knowledge",
+        "label": "Retrieve context",
+        "description": "Build local retrieval vectors and find relevant passages.",
+        "status": "completed",
+        "message": "Knowledge retrieved",
+        "detail": "Retrieved 3 chunks from the local vector DB for query 'Analyze the selected controlled test input using only its content.'.",
+        "started_at": "2026-11-05T18:01:09.127600+00:00",
+        "finished_at": "2026-11-05T18:01:09.431992+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T18:01:09.127600+00:00",
+            "status": "running",
+            "message": "Executing search_knowledge",
+            "detail": "No supporting knowledge retrieved yet."
+          },
+          {
+            "at": "2026-11-05T18:01:09.428108+00:00",
+            "status": "completed",
+            "message": "Knowledge retrieved",
+            "detail": "Retrieved 3 chunks from the local vector DB for query 'Analyze the selected controlled test input using only its content.'."
+          },
+          {
+            "at": "2026-11-05T18:01:09.431992+00:00",
+            "status": "completed",
+            "message": "Knowledge retrieved",
+            "detail": "Retrieved 3 chunks from the local vector DB for query 'Analyze the selected controlled test input using only its content.'."
+          }
+        ]
+      },
+      {
+        "id": "reasoning",
+        "label": "Analyze content",
+        "description": "Generate a summary, match review terms, or extract literal fields.",
+        "status": "completed",
+        "message": "Field extraction completed",
+        "detail": "profile=business; mode=extract_fields; extracted 5 literal fields with source excerpts.",
+        "started_at": "2026-11-05T18:01:09.447121+00:00",
+        "finished_at": "2026-11-05T18:01:09.454515+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T18:01:09.447121+00:00",
+            "status": "running",
+            "message": "Executing reason",
+            "detail": "Evidence gathered; ready to synthesize findings."
+          },
+          {
+            "at": "2026-11-05T18:01:09.451183+00:00",
+            "status": "completed",
+            "message": "Field extraction completed",
+            "detail": "profile=business; mode=extract_fields; extracted 5 literal fields with source excerpts."
+          },
+          {
+            "at": "2026-11-05T18:01:09.454515+00:00",
+            "status": "completed",
+            "message": "Field extraction completed",
+            "detail": "profile=business; mode=extract_fields; extracted 5 literal fields with source excerpts."
+          }
+        ]
+      },
+      {
+        "id": "verification",
+        "label": "Verify sources",
+        "description": "Check citations and decide which findings need human review.",
+        "status": "completed",
+        "message": "Evidence cross-check completed",
+        "detail": "5/5 finding(s) confirmed against the cited source pages (score 100.0%); 0 flagged for human review.",
+        "started_at": "2026-11-05T18:01:09.469935+00:00",
+        "finished_at": "2026-11-05T18:01:09.481200+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T18:01:09.469935+00:00",
+            "status": "running",
+            "message": "Executing verify",
+            "detail": "Findings exist but are not verified."
+          },
+          {
+            "at": "2026-11-05T18:01:09.474203+00:00",
+            "status": "completed",
+            "message": "Evidence cross-check completed",
+            "detail": "5/5 finding(s) confirmed against the cited source pages (score 100.0%); 0 flagged for human review."
+          },
+          {
+            "at": "2026-11-05T18:01:09.481200+00:00",
+            "status": "completed",
+            "message": "Evidence cross-check completed",
+            "detail": "5/5 finding(s) confirmed against the cited source pages (score 100.0%); 0 flagged for human review."
+          }
+        ]
+      },
+      {
+        "id": "deliverables",
+        "label": "Save results",
+        "description": "Save the run, findings, and downloadable report files.",
+        "status": "running",
+        "message": "Report generated",
+        "detail": "Produced 5 deliverable file(s): docx, md, pdf, txt, xlsx.",
+        "started_at": "2026-11-05T18:01:09.497787+00:00",
+        "finished_at": null,
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T18:01:09.497787+00:00",
+            "status": "running",
+            "message": "Generating and saving report files",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T18:01:09.562086+00:00",
+            "status": "completed",
+            "message": "Report generated",
+            "detail": "Produced 5 deliverable file(s): docx, md, pdf, txt, xlsx."
+          }
+        ]
+      }
+    ],
+    "result": null,
+    "document": {
+      "id": 3,
+      "filename": "S3_project_record.txt"
+    }
+  }
+}

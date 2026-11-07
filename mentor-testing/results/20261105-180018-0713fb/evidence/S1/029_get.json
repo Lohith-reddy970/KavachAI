@@ -1,0 +1,9 @@
+{
+  "at": "2026-11-05T18:00:45.167332+00:00",
+  "method": "GET",
+  "path": "/api/deliverables/1/download",
+  "request": null,
+  "http_status": 200,
+  "elapsed_ms": 42,
+  "response": "KAVACH AI - Document Analysis Report\r\nSource document: S1_inspection.pdf\r\nGenerated: 2026-11-05T18:00:44.623602+00:00 | Mode: airgapped\r\nRun ID: 1\r\nProfile: Industrial engineering | Analysis: Risk review\r\n\r\nLOCAL ANALYSIS OUTPUT - REVIEW BEFORE OPERATIONAL USE\r\n================================================================\r\n\r\n1. EXECUTIVE SUMMARY\r\n   Verification score: 100.0%\r\n   Evidence-backed: 1/1\r\n   Model routing: qwen3:8b (reasoning)\r\n\r\n2. FINDINGS\r\n   1. [HIGH] A critical crack was observed on equipment T-401 and requires repair. [NEEDS HUMAN REVIEW]\r\n      Reference / topic: T-401 | Confidence: 90.0%\r\n      Matched risk terms: crack, critical, repair. A critical crack was observed on equipment T-401 and requires repair.\r\n      - Evidence: S1_inspection.pdf (p.1; chars 104-173) [90.0%]; extraction=pdf-text\r\n        \"A critical crack was observed on equipment T-401 and requires repair.\"\r\n\r\n3. VERIFICATION\r\n   Score: 100.0% | Evidence-backed: 1/1\r\n   Findings flagged for review: A critical crack was observed on equipment T-401 and requires repair.\r\n\r\n4. PIPELINE TRACE\r\n   - [security_agent] Provider policy checked\r\n   - [router_agent] Task routed to qwen3:8b\r\n   - [router_agent] Execution plan created\r\n   - [document_agent] Uploaded document loaded\r\n   - [document_agent] Document analysis prepared\r\n   - [vision_agent] Vision analysis skipped\r\n   - [knowledge_agent] Knowledge retrieved\r\n   - [reasoning_agent] Reasoning analysis captured\r\n   - [reasoning_agent] Profile-based risk review completed\r\n   - [verification_agent] Evidence cross-check completed"
+}

@@ -1,0 +1,645 @@
+{
+  "started_at": "2026-11-05T17:57:53.448510+00:00",
+  "environment": {
+    "python": "3.14.7",
+    "api_url": "http://127.0.0.1:56396",
+    "isolated_storage": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime",
+    "inference": "real local Ollama",
+    "test_doubles": false,
+    "health": {
+      "status": "ok",
+      "mode": "airgapped",
+      "version": "1.0.0",
+      "app": "KAVACH AI"
+    },
+    "configured_models": [
+      {
+        "id": 1,
+        "name": "qwen3:8b",
+        "provider": "ollama",
+        "kind": "reasoning",
+        "status": "configured",
+        "params": "configured model",
+        "routing_rule": "General reasoning and evidence synthesis.",
+        "vram_gb": 0.0
+      },
+      {
+        "id": 2,
+        "name": "llava:7b",
+        "provider": "ollama",
+        "kind": "vision",
+        "status": "configured",
+        "params": "configured model",
+        "routing_rule": "P&ID and image analysis.",
+        "vram_gb": 0.0
+      },
+      {
+        "id": 3,
+        "name": "llama3.2:3b",
+        "provider": "ollama",
+        "kind": "other",
+        "status": "configured",
+        "params": "configured model",
+        "routing_rule": "Code, classification, extraction, and planner choices.",
+        "vram_gb": 0.0
+      },
+      {
+        "id": 4,
+        "name": "nomic-embed-text:latest",
+        "provider": "ollama",
+        "kind": "embedding",
+        "status": "configured",
+        "params": "configured model",
+        "routing_rule": "Local knowledge-base embeddings.",
+        "vram_gb": 0.0
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "S1",
+      "title": "PDF review, citations, and human approval",
+      "kind": "success",
+      "objective": "Demonstrate PDF extraction, real local reasoning, source verification, review gating, and report download.",
+      "input": "inputs/S1_inspection.pdf",
+      "steps": [
+        "Upload the controlled PDF.",
+        "Run Industrial risk review and observe the saved job.",
+        "Check the high-severity source match and exact citation.",
+        "Approve the held test finding, then download the text report."
+      ],
+      "expected": "Analysis finishes with a source-cited high-severity match, initially held for review. The reviewer decision completes the run and a report downloads.",
+      "explain": "The successful behavior includes the human-review hold. A critical finding must not be silently cleared. Citation verification checks the excerpt against the supplied PDF; it does not prove the inspection claim is true.",
+      "started_at": "2026-11-05T17:57:56.282276+00:00",
+      "duration_ms": 23322,
+      "checks": [
+        {
+          "name": "Upload succeeds",
+          "passed": true,
+          "actual": 200
+        },
+        {
+          "name": "Job accepted",
+          "passed": true,
+          "actual": 202
+        },
+        {
+          "name": "Analysis finishes",
+          "passed": true,
+          "actual": "completed"
+        },
+        {
+          "name": "Real local reasoning output is recorded",
+          "passed": true,
+          "actual": "qwen3:8b"
+        },
+        {
+          "name": "PDF text extracted",
+          "passed": true,
+          "actual": {
+            "status": "ready",
+            "method": "pdf-text",
+            "page_count": 1,
+            "ocr_pages": 0,
+            "ocr_attempted_pages": 0,
+            "note": ""
+          }
+        },
+        {
+          "name": "Critical source match found",
+          "passed": true,
+          "actual": [
+            "A critical crack was observed on equipment T-401 and requires repair."
+          ]
+        },
+        {
+          "name": "Citations match the supplied PDF",
+          "passed": true,
+          "actual": "1/1"
+        },
+        {
+          "name": "High-risk result is held for review",
+          "passed": true,
+          "actual": "awaiting_review"
+        },
+        {
+          "name": "Review decision stored for finding 1",
+          "passed": true,
+          "actual": 200
+        },
+        {
+          "name": "All required decisions complete the run",
+          "passed": true,
+          "actual": "completed"
+        },
+        {
+          "name": "Actual report downloads",
+          "passed": true,
+          "actual": 200
+        }
+      ],
+      "observed": {
+        "document_id": 1,
+        "job_id": "bde3c2be424e4001ad19bcdd943d224a",
+        "job_status": "completed",
+        "run_id": 1,
+        "stage_statuses": {
+          "validation": "completed",
+          "extraction": "completed",
+          "routing": "completed",
+          "vision": "skipped",
+          "knowledge": "completed",
+          "reasoning": "completed",
+          "verification": "completed",
+          "deliverables": "completed"
+        },
+        "run_status": "awaiting_review",
+        "fields_or_matches": 1,
+        "verification_score": 100.0,
+        "evidence_backed": "1/1",
+        "report_formats": [
+          "txt",
+          "md",
+          "docx",
+          "xlsx",
+          "pdf"
+        ],
+        "reasoning_model": "qwen3:8b",
+        "run_status_after_review": "completed"
+      },
+      "evidence": [
+        "evidence/S1/001_post.json",
+        "evidence/S1/002_post.json",
+        "evidence/S1/003_get.json",
+        "evidence/S1/004_get.json",
+        "evidence/S1/005_get.json",
+        "evidence/S1/006_get.json",
+        "evidence/S1/007_get.json",
+        "evidence/S1/008_get.json",
+        "evidence/S1/009_get.json",
+        "evidence/S1/010_get.json",
+        "evidence/S1/011_get.json",
+        "evidence/S1/012_get.json",
+        "evidence/S1/013_get.json",
+        "evidence/S1/014_get.json",
+        "evidence/S1/015_get.json",
+        "evidence/S1/016_get.json",
+        "evidence/S1/017_get.json",
+        "evidence/S1/018_get.json",
+        "evidence/S1/019_get.json",
+        "evidence/S1/020_get.json",
+        "evidence/S1/021_get.json",
+        "evidence/S1/022_get.json",
+        "evidence/S1/023_get.json",
+        "evidence/S1/024_get.json",
+        "evidence/S1/025_get.json",
+        "evidence/S1/026_get.json",
+        "evidence/S1/027_post.json",
+        "evidence/S1/028_get.json",
+        "evidence/S1/029_get.json"
+      ],
+      "error": null,
+      "verdict": "PASS",
+      "scenario_outcome": "successful"
+    },
+    {
+      "id": "S2",
+      "title": "PNG inspection, OCR, and literal fields",
+      "kind": "success",
+      "objective": "Demonstrate real image inspection even in Extract fields mode, local OCR, and source-backed values.",
+      "input": "inputs/S2_invoice.png",
+      "steps": [
+        "Upload the controlled PNG.",
+        "Select Finance and Extract fields.",
+        "Wait for Inspect images to finish with the local vision model.",
+        "Check the date/amount fields, OCR page count, and separate visual observations."
+      ],
+      "expected": "Image inspection completes, OCR reads the page, and the known date and amount appear as literal fields with citations. Visual observations are shown separately.",
+      "explain": "This checks the PNG regression: field extraction must not skip vision. The field assertions compare known input values with actual output. A nonempty model description proves the path ran, not that every visual statement is accurate.",
+      "started_at": "2026-11-05T17:58:19.606033+00:00",
+      "duration_ms": 17196,
+      "checks": [
+        {
+          "name": "Upload succeeds",
+          "passed": true,
+          "actual": 200
+        },
+        {
+          "name": "Job accepted",
+          "passed": true,
+          "actual": 202
+        },
+        {
+          "name": "Analysis finishes",
+          "passed": true,
+          "actual": "completed"
+        },
+        {
+          "name": "Image inspection ran",
+          "passed": true,
+          "actual": "completed"
+        },
+        {
+          "name": "Real vision output is saved separately",
+          "passed": true,
+          "actual": "llava:7b"
+        },
+        {
+          "name": "Local OCR processed the page",
+          "passed": true,
+          "actual": {
+            "status": "ready",
+            "method": "tesseract",
+            "page_count": 1,
+            "ocr_pages": 1,
+            "ocr_attempted_pages": 1,
+            "note": ""
+          }
+        },
+        {
+          "name": "Known date is extracted",
+          "passed": true,
+          "actual": [
+            "Extracted reference identifier: INV-2026-005",
+            "Extracted date: 2026-11-05",
+            "Extracted amount: INR 2500",
+            "Extracted owner / approver: Test Coordinator",
+            "Extracted email: quality@example.org"
+          ]
+        },
+        {
+          "name": "Known amount is extracted",
+          "passed": true,
+          "actual": [
+            "Extracted reference identifier: INV-2026-005",
+            "Extracted date: 2026-11-05",
+            "Extracted amount: INR 2500",
+            "Extracted owner / approver: Test Coordinator",
+            "Extracted email: quality@example.org"
+          ]
+        },
+        {
+          "name": "Literal field citations verify",
+          "passed": true,
+          "actual": "5/5"
+        }
+      ],
+      "observed": {
+        "document_id": 2,
+        "job_id": "2cc935b46d0943aba45093b8fcddfee3",
+        "job_status": "completed",
+        "run_id": 2,
+        "stage_statuses": {
+          "validation": "completed",
+          "extraction": "completed",
+          "routing": "completed",
+          "vision": "completed",
+          "knowledge": "completed",
+          "reasoning": "completed",
+          "verification": "completed",
+          "deliverables": "completed"
+        },
+        "run_status": "completed",
+        "fields_or_matches": 5,
+        "verification_score": 100.0,
+        "evidence_backed": "5/5",
+        "report_formats": [
+          "txt",
+          "md",
+          "docx",
+          "xlsx",
+          "pdf"
+        ],
+        "vision_model": "llava:7b",
+        "vision_output": "The image shows a document with the following visible content:\n\n```\nCONTROLLED ACCEPTANCE TEST INPUT\nTEST INVOICE - NOT A REAL PAYMENT\n\nInvoice: INV-2026-005\nDate: 2026-11-05\nTotal: INR 2500\n\nOwner: Test Coordinator\nContact: quality@example.org\n```\n\nThe document appears to be a structured form with fields for an invoice, date, total amount, owner, and contact information. The \"Total\" field is in Indian Rupees (INR). The \"Owner\" field is filled with \"Test Coordinator,\" and the \"Contact\" field is filled with an email address. The \"Invoice\" and \"Date\" fields are also filled with specific values. The \"Total\" field is the only one that is filled in, while the \"Invoice\" and \"Date\" fields are partially visible. The \"Owner\" and \"Contact\" fields are fully visible. The \"Invoice\" field is a combination of letters and numbers, and the \"Date\" field is in the format of year-month-day. The \"Total\" field is in the format of currency followed by the amount. The \"Invoice\" and \"Date\" fields are aligned to the left, while the \"Total\" field is aligned to the right. The \"Owner\" and \"Contact\" fields are aligned to the left. The document has a plain background and is presented in a portrait orientation.",
+        "ocr_pages": 1,
+        "extracted_fields": [
+          "Extracted reference identifier: INV-2026-005",
+          "Extracted date: 2026-11-05",
+          "Extracted amount: INR 2500",
+          "Extracted owner / approver: Test Coordinator",
+          "Extracted email: quality@example.org"
+        ]
+      },
+      "evidence": [
+        "evidence/S2/030_post.json",
+        "evidence/S2/031_post.json",
+        "evidence/S2/032_get.json",
+        "evidence/S2/033_get.json",
+        "evidence/S2/034_get.json",
+        "evidence/S2/035_get.json",
+        "evidence/S2/036_get.json",
+        "evidence/S2/037_get.json",
+        "evidence/S2/038_get.json",
+        "evidence/S2/039_get.json",
+        "evidence/S2/040_get.json",
+        "evidence/S2/041_get.json",
+        "evidence/S2/042_get.json",
+        "evidence/S2/043_get.json",
+        "evidence/S2/044_get.json",
+        "evidence/S2/045_get.json",
+        "evidence/S2/046_get.json",
+        "evidence/S2/047_get.json",
+        "evidence/S2/048_get.json",
+        "evidence/S2/049_get.json"
+      ],
+      "error": null,
+      "verdict": "PASS",
+      "scenario_outcome": "successful"
+    },
+    {
+      "id": "S3",
+      "title": "Bounded planner execution",
+      "kind": "success",
+      "objective": "Demonstrate the real local planner selecting allowlisted tools and finishing within its step budget.",
+      "input": "inputs/S3_project_record.txt",
+      "steps": [
+        "Upload the controlled text record.",
+        "Run the bounded planner in Extract fields mode.",
+        "Inspect its actual action trace and stop reason.",
+        "Check source-backed values and generated reports."
+      ],
+      "expected": "Planner stops with finished within 10 steps, uses permitted actions, extracts the known date/amount, and saves reports.",
+      "explain": "This is the agentic path rather than the fixed pipeline. The trace shows which allowed action was selected at each step. Awaiting human review is an acceptable completed-analysis outcome.",
+      "started_at": "2026-11-05T17:58:36.803822+00:00",
+      "duration_ms": 8170,
+      "checks": [
+        {
+          "name": "Upload succeeds",
+          "passed": true,
+          "actual": 200
+        },
+        {
+          "name": "Job accepted",
+          "passed": true,
+          "actual": 202
+        },
+        {
+          "name": "Analysis finishes",
+          "passed": true,
+          "actual": "completed"
+        },
+        {
+          "name": "Planner finishes normally",
+          "passed": true,
+          "actual": "finished"
+        },
+        {
+          "name": "Step budget respected",
+          "passed": true,
+          "actual": 5
+        },
+        {
+          "name": "Only permitted actions used",
+          "passed": true,
+          "actual": [
+            "inspect_document",
+            "search_knowledge",
+            "reason",
+            "verify",
+            "finish"
+          ]
+        },
+        {
+          "name": "Planner returns known literal values",
+          "passed": true,
+          "actual": [
+            "Extracted reference identifier: PRJ-2026-103",
+            "Extracted date: 2026-11-06",
+            "Extracted amount: INR 4800",
+            "Extracted owner / approver: Test Coordinator",
+            "Extracted email: planner@example.org"
+          ]
+        },
+        {
+          "name": "Planner saves reports and verifies citations",
+          "passed": true,
+          "actual": "5/5"
+        }
+      ],
+      "observed": {
+        "document_id": 3,
+        "job_id": "871230ca472e4e8eb51ad3f233dbd8af",
+        "job_status": "completed",
+        "run_id": 3,
+        "stage_statuses": {
+          "validation": "completed",
+          "extraction": "completed",
+          "routing": "completed",
+          "vision": "skipped",
+          "knowledge": "completed",
+          "reasoning": "completed",
+          "verification": "completed",
+          "deliverables": "completed"
+        },
+        "run_status": "completed",
+        "fields_or_matches": 5,
+        "verification_score": 100.0,
+        "evidence_backed": "5/5",
+        "report_formats": [
+          "txt",
+          "md",
+          "docx",
+          "xlsx",
+          "pdf"
+        ],
+        "planner": {
+          "provider": "ollama",
+          "max_steps": 10,
+          "steps_used": 5,
+          "stop_reason": "finished",
+          "trace": [
+            {
+              "step": 1,
+              "action": "inspect_document",
+              "reason": "Documents have not been loaded yet.",
+              "args": {},
+              "status": "completed"
+            },
+            {
+              "step": 2,
+              "action": "search_knowledge",
+              "reason": "No supporting knowledge retrieved yet.",
+              "args": {
+                "query": "Analyze the selected controlled test input using only its content.",
+                "top_k": 4
+              },
+              "status": "completed"
+            },
+            {
+              "step": 3,
+              "action": "reason",
+              "reason": "Evidence gathered; ready to synthesize findings.",
+              "args": {},
+              "status": "completed"
+            },
+            {
+              "step": 4,
+              "action": "verify",
+              "reason": "Findings exist but are not verified.",
+              "args": {},
+              "status": "completed"
+            },
+            {
+              "step": 5,
+              "action": "finish",
+              "reason": "All required steps are complete.",
+              "args": {},
+              "status": "completed"
+            }
+          ],
+          "requires_human_review": false,
+          "review_required": [],
+          "allowed_tools": [
+            "search_knowledge",
+            "inspect_document",
+            "analyze_pid",
+            "reason",
+            "verify",
+            "human_review"
+          ]
+        },
+        "extracted_fields": [
+          "Extracted reference identifier: PRJ-2026-103",
+          "Extracted date: 2026-11-06",
+          "Extracted amount: INR 4800",
+          "Extracted owner / approver: Test Coordinator",
+          "Extracted email: planner@example.org"
+        ]
+      },
+      "evidence": [
+        "evidence/S3/050_post.json",
+        "evidence/S3/051_post.json",
+        "evidence/S3/052_get.json",
+        "evidence/S3/053_get.json",
+        "evidence/S3/054_get.json",
+        "evidence/S3/055_get.json",
+        "evidence/S3/056_get.json",
+        "evidence/S3/057_get.json",
+        "evidence/S3/058_get.json",
+        "evidence/S3/059_get.json",
+        "evidence/S3/060_get.json"
+      ],
+      "error": null,
+      "verdict": "PASS",
+      "scenario_outcome": "successful"
+    },
+    {
+      "id": "F1",
+      "title": "Unsupported file rejected",
+      "kind": "expected_failure",
+      "objective": "Demonstrate upload-policy enforcement without executing an unsafe file.",
+      "input": "inputs/F1_disallowed.exe",
+      "steps": [
+        "Record the document count.",
+        "Attempt to upload a harmless test byte string with an .exe filename.",
+        "Record the real error response and verify the document count is unchanged."
+      ],
+      "expected": "HTTP 400 states that the file type is not allowed. No document record is created.",
+      "explain": "The upload operation is expected to fail. The test passes only if the application rejects it correctly. The .exe fixture is plain test text and is never executed.",
+      "started_at": "2026-11-05T17:58:44.975340+00:00",
+      "duration_ms": 47,
+      "checks": [
+        {
+          "name": "Disallowed extension is rejected with HTTP 400",
+          "passed": true,
+          "actual": 400
+        },
+        {
+          "name": "Clear policy error is returned",
+          "passed": true,
+          "actual": {
+            "detail": "File type '.exe' not allowed. Allowed: csv, docx, jpeg, jpg, pdf, png, py, txt."
+          }
+        },
+        {
+          "name": "Rejected upload creates no document",
+          "passed": true,
+          "actual": 3
+        }
+      ],
+      "observed": {
+        "http_status": 400,
+        "error_response": {
+          "detail": "File type '.exe' not allowed. Allowed: csv, docx, jpeg, jpg, pdf, png, py, txt."
+        },
+        "documents_before": 3,
+        "documents_after": 3
+      },
+      "evidence": [
+        "evidence/F1/061_get.json",
+        "evidence/F1/062_post.json",
+        "evidence/F1/063_get.json"
+      ],
+      "error": null,
+      "verdict": "PASS",
+      "scenario_outcome": "expected rejection"
+    },
+    {
+      "id": "F2",
+      "title": "Missing source document rejected",
+      "kind": "expected_failure",
+      "objective": "Demonstrate that analysis cannot invent a result for a nonexistent document.",
+      "input": "inputs/F2_missing_document_request.json",
+      "steps": [
+        "Record the run count.",
+        "Submit an analysis job using nonexistent document ID 2147483647.",
+        "Record the error response and verify that no run was created."
+      ],
+      "expected": "HTTP 404 states Document not found. No analysis run is created.",
+      "explain": "The analysis request is expected to fail because its source does not exist. Correct rejection is a passing negative test; a server error or fabricated result would fail the test.",
+      "started_at": "2026-11-05T17:58:45.025529+00:00",
+      "duration_ms": 42,
+      "checks": [
+        {
+          "name": "Missing source is rejected with HTTP 404",
+          "passed": true,
+          "actual": 404
+        },
+        {
+          "name": "Clear missing-document error is returned",
+          "passed": true,
+          "actual": {
+            "detail": "Document not found"
+          }
+        },
+        {
+          "name": "Rejected request creates no run",
+          "passed": true,
+          "actual": 3
+        }
+      ],
+      "observed": {
+        "http_status": 404,
+        "error_response": {
+          "detail": "Document not found"
+        },
+        "runs_before": 3,
+        "runs_after": 3
+      },
+      "evidence": [
+        "evidence/F2/064_get.json",
+        "evidence/F2/065_post.json",
+        "evidence/F2/066_get.json"
+      ],
+      "error": null,
+      "verdict": "PASS",
+      "scenario_outcome": "expected rejection"
+    }
+  ],
+  "finished_at": "2026-11-05T17:58:45.087286+00:00",
+  "summary": {
+    "total": 5,
+    "successful_scenarios": 3,
+    "expected_failure_scenarios": 2,
+    "checks_passed": 5,
+    "checks_failed": 0
+  },
+  "input_sha256": {
+    "F1_disallowed.exe": "14710d866604cfdc2d0ce82c63ce2fa8657aeef65f3c24e52f4f911ac51f88bc",
+    "F2_missing_document_request.json": "eb88409dc94ce86192b87408bbebf737ebfea010f5c7440764d1b0bb88a3a645",
+    "S1_inspection.pdf": "1fbb803c70e0612ccd0a849cd478bfc73a8be83a4d9491dac99f986090d27810",
+    "S2_invoice.png": "a0ec9ece3bf400cb327267851b27959f8972b9ccaae5cfd150339349401ae5fe",
+    "S3_project_record.txt": "58f417d68f926d01fd57765fd6f801194cae1f23d69774aee7e62202b32528ed"
+  }
+}

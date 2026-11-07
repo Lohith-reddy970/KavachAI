@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from app.services import document_analysis
+import pytest
 
 REPORT = (
     "Compressor K-220 quarterly inspection.\n"
@@ -61,23 +62,15 @@ def test_same_filename_uploads_do_not_overwrite(client):
     assert open(first["path"], "rb").read() == b"first"
 
 
-def test_seeded_industrial_profile_reads_sample_pdf_by_extension(client):
-    # Seeded documents store a category ("report") in doc_type, not "pdf".
-    doc = next(d for d in client.get("/api/documents").json()
-               if d["filename"] == "inspection_report.pdf")
-    run = _analyze(client, doc["id"], profile="industrial")
-    assert run["findings"], [s["detail"] for s in run["steps"]]
-    assert all(ev["source"] == "inspection_report.pdf"
-               for f in run["findings"] for ev in f["evidence"])
-
-
 def test_analyze_unknown_document_is_404(client):
     assert client.post("/api/documents/999999/analyze", json={"title": "x"}).status_code == 404
 
 
 def test_profile_catalog_is_available(client):
     catalog = client.get("/api/profiles").json()
-    assert {profile["id"] for profile in catalog["profiles"]} == {"general", "industrial"}
+    assert {profile["id"] for profile in catalog["profiles"]} == {
+        "general", "industrial", "business", "education", "finance", "legal", "healthcare", "hr",
+    }
     assert {mode["id"] for mode in catalog["analysis_modes"]} == {
         "risk_review", "summary", "extract_fields",
     }
@@ -89,6 +82,57 @@ def test_profiles_apply_different_risk_terms():
     industrial = document_analysis.find_findings(text, "report.txt", "industrial")
     assert general == []
     assert industrial and "corro" in industrial[0]["description"]
+
+
+@pytest.mark.parametrize("profile,text,expected", [
+    ("business", "The launch is blocked because the supplier has not shipped the required materials.", "high"),
+    ("education", "The research report has uncited passages that need a source before submission.", "medium"),
+    ("finance", "Invoice INV-2026-01 remains unpaid and the account needs reconciliation.", "medium"),
+    ("legal", "The supplier agreement has expired and needs a renewal decision this week.", "medium"),
+    ("healthcare", "The service record contains unsigned consent for the scheduled appointment.", "medium"),
+    ("hr", "The staff file shows incomplete onboarding and a training gap for the new employee.", "medium"),
+])
+def test_nonindustrial_profiles_review_actual_uploaded_content(client, profile, text, expected):
+    doc = _upload(client, f"{profile}_example.txt", text.encode())
+    run = _analyze(client, doc["id"], profile=profile)
+    assert run["findings"] and run["findings"][0]["severity"] == expected
+    assert run["run"]["verification_score"] == 100.0
+    assert all(ev["source"] == doc["filename"] and ev["excerpt"] in text
+               for finding in run["findings"] for ev in finding["evidence"])
+
+
+def test_everyday_field_extraction_preserves_values_and_citations(client):
+    text = ("Invoice INV-2026-01\nInvoice date: 4 November 2026\n"
+            "Total: INR 50,000\nOwner: Priya Shah\nContact: priya@example.org\n")
+    doc = _upload(client, "invoice.txt", text.encode())
+    run = _analyze(client, doc["id"], profile="finance", analysis_mode="extract_fields")
+    titles = " | ".join(f["title"] for f in run["findings"])
+    for value in ("INV-2026-01", "4 November 2026", "INR 50,000", "Priya Shah", "priya@example.org"):
+        assert value in titles
+    assert run["run"]["verification_score"] == 100.0
+    for finding in run["findings"]:
+        citation = finding["evidence"][0]
+        location = citation["location"]
+        assert text[location["char_start"]:location["char_end"]] == citation["excerpt"]
+
+
+def test_invoice_fields_inside_a_word_table_are_not_lost(client):
+    from io import BytesIO
+    docx = pytest.importorskip("docx")
+    document = docx.Document()
+    document.add_paragraph("Supplier invoice INV-2026-02")
+    table = document.add_table(rows=2, cols=2)
+    table.cell(0, 0).text = "Total:"
+    table.cell(0, 1).text = "INR 12,500"
+    table.cell(1, 0).text = "Owner:"
+    table.cell(1, 1).text = "Priya Shah"
+    buffer = BytesIO()
+    document.save(buffer)
+    doc = _upload(client, "supplier_invoice.docx", buffer.getvalue())
+    run = _analyze(client, doc["id"], profile="finance", analysis_mode="extract_fields")
+    titles = " | ".join(f["title"] for f in run["findings"])
+    assert "INR 12,500" in titles and "Priya Shah" in titles
+    assert run["run"]["verification_score"] == 100.0
 
 
 def test_summary_mode_records_summary_without_risk_findings(client):
@@ -130,18 +174,19 @@ def test_analyze_rejects_unknown_profile_and_mode(client):
     assert unknown_mode.status_code == 422
 
 
-def test_image_risk_review_returns_guidance_without_model_inference(client):
+def test_image_risk_review_inspects_image_even_without_ocr_text(client):
     doc = _upload(client, "diagram.png", b"\x89PNG\r\n\x1a\nnot-really-an-image")
     run = _analyze(client, doc["id"])
     assert run["findings"] == []
     assert run["run"]["status"] == "completed"
     statuses = {s["agent"]: s["status"] for s in run["steps"]}
-    assert statuses["vision_agent"] == "skipped"
+    assert statuses["vision_agent"] == "completed"
     assert statuses["knowledge_agent"] == "skipped"
     reasoning = next(s for s in run["steps"] if s["agent"] == "reasoning_agent")
     assert reasoning["status"] == "warning"
-    assert "requires extracted text" in reasoning["message"]
-    assert "summary" in reasoning["detail"].lower()
+    assert "no OCR text" in reasoning["message"]
+    assert run["vision"]["text"]
+    assert run["vision"]["advisory"] is True
 
 
 def test_image_summary_uses_vision_output(client):

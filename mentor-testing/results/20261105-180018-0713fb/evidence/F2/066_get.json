@@ -1,0 +1,58 @@
+{
+  "at": "2026-11-05T18:01:10.790625+00:00",
+  "method": "GET",
+  "path": "/api/agents/runs",
+  "request": null,
+  "http_status": 200,
+  "elapsed_ms": 2,
+  "response": [
+    {
+      "id": 3,
+      "task_id": null,
+      "scenario": "agentic",
+      "status": "completed",
+      "verification_score": 100.0,
+      "evidence_backed": "5/5",
+      "started_at": "2026-11-05T18:01:02.563035+00:00",
+      "finished_at": "2026-11-05T18:01:09.673418+00:00",
+      "retired_sample": 0,
+      "analysis_json": "null",
+      "vision_json": "null",
+      "extraction_json": "{\"status\": \"ready\", \"method\": \"text\", \"page_count\": 1, \"ocr_pages\": 0, \"ocr_attempted_pages\": 0, \"note\": \"\"}",
+      "analysis_profile": "business",
+      "analysis_mode": "extract_fields"
+    },
+    {
+      "id": 2,
+      "task_id": 2,
+      "scenario": "document:S2_invoice.png",
+      "status": "completed",
+      "verification_score": 100.0,
+      "evidence_backed": "5/5",
+      "started_at": "2026-11-05T18:00:46.480265+00:00",
+      "finished_at": "2026-11-05T18:01:01.638155+00:00",
+      "retired_sample": 0,
+      "analysis_json": "null",
+      "vision_json": "{\"text\": \"The image shows a document with the following visible content:\\n\\n```\\nCONTROLLED ACCEPTANCE TEST INPUT\\nTEST INVOICE - NOT A REAL PAYMENT\\n\\nInvoice: INV-2026-005\\nDate: 2026-11-05\\nTotal: INR 2500\\n\\nOwner: Test Coordinator\\nContact: quality@example.org\\n```\\n\\nThe document appears to be a structured form with fields for an invoice, date, total amount, owner, and contact information. The \\\"Total\\\" field is in Indian Rupees (INR). The \\\"Owner\\\" field is filled with \\\"Test Coordinator,\\\" and the \\\"Contact\\\" field is filled with an email address. The \\\"Invoice\\\" and \\\"Date\\\" fields are also filled with specific values. The \\\"Total\\\" field is the only one that is filled in, while the \\\"Invoice\\\" and \\\"Date\\\" fields are partially visible. The \\\"Owner\\\" and \\\"Contact\\\" fields are fully visible. The \\\"Invoice\\\" field is a combination of letters and numbers, and the \\\"Date\\\" field is in the format of year-month-day. The \\\"Total\\\" field is in the format of currency followed by the amount. The \\\"Invoice\\\" and \\\"Date\\\" fields are aligned to the left, while the \\\"Total\\\" field is aligned to the right. The \\\"Owner\\\" and \\\"Contact\\\" fields are aligned to the left. The document has a plain background and is presented in a portrait orientation.\", \"model\": \"llava:7b\", \"provider\": \"ollama\", \"source\": \"S2_invoice.png\", \"advisory\": true}",
+      "extraction_json": "{\"status\": \"ready\", \"method\": \"tesseract\", \"page_count\": 1, \"ocr_pages\": 1, \"ocr_attempted_pages\": 1, \"note\": \"\"}",
+      "analysis_profile": "finance",
+      "analysis_mode": "extract_fields"
+    },
+    {
+      "id": 1,
+      "task_id": 1,
+      "scenario": "document:S1_inspection.pdf",
+      "status": "completed",
+      "verification_score": 100.0,
+      "evidence_backed": "1/1",
+      "started_at": "2026-11-05T18:00:21.931940+00:00",
+      "finished_at": "2026-11-05T18:00:44.743465+00:00",
+      "retired_sample": 0,
+      "analysis_json": "{\"model\": \"qwen3:8b\", \"provider\": \"ollama\", \"text\": \"**Rationale:**  \\nThe document indicates a critical crack on equipment T-401, which, if unaddressed, could compromise structural integrity, leading to equipment failure, safety hazards, or operational downtime. The observation requires engineer review before action, aligning with process-safety protocols. However, the document is explicitly labeled as \\\"test material, not a real inspection,\\\" and no quantitative data (e.g., crack size, location, or stress analysis) is provided to assess risk severity or prioritize repair urgency.  \\n\\n**Uncertainty:**  \\nThe absence of detailed technical parameters (e.g., crack dimensions, material stress thresholds, or inspection methodology) limits the ability to quantify risks or determine compliance with maintenance standards. The test nature of the document further raises questions about its relevance to real-world equipment integrity.  \\n\\n**Conclusion:**  \\nA critical crack is noted, but insufficient data exists to evaluate risk magnitude or compliance. Engineer review is mandated, but further analysis requires additional evidence.\", \"meta\": {\"deterministic\": false}}",
+      "vision_json": "null",
+      "extraction_json": "{\"status\": \"ready\", \"method\": \"pdf-text\", \"page_count\": 1, \"ocr_pages\": 0, \"ocr_attempted_pages\": 0, \"note\": \"\"}",
+      "analysis_profile": "industrial",
+      "analysis_mode": "risk_review"
+    }
+  ]
+}

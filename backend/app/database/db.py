@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS documents (
     doc_type TEXT,
     size_bytes INTEGER DEFAULT 0,
     pages INTEGER DEFAULT 0,
+    extraction_method TEXT DEFAULT '',
+    ocr_pages INTEGER DEFAULT 0,
     status TEXT DEFAULT 'ready',
     summary TEXT,
     created_at TEXT NOT NULL
@@ -73,6 +75,7 @@ CREATE TABLE IF NOT EXISTS findings (
     confidence REAL DEFAULT 0,
     equipment_id TEXT,
     needs_review INTEGER DEFAULT 0,
+    review_reasons_json TEXT,
     review_status TEXT DEFAULT 'pending',
     created_at TEXT NOT NULL
 );
@@ -84,6 +87,9 @@ CREATE TABLE IF NOT EXISTS evidence (
     source TEXT NOT NULL,
     page INTEGER,
     excerpt TEXT,
+    location_json TEXT,
+    extraction_method TEXT,
+    ocr_confidence REAL,
     confidence REAL DEFAULT 0,
     created_at TEXT NOT NULL
 );
@@ -128,6 +134,38 @@ CREATE TABLE IF NOT EXISTS reviews (
     note TEXT,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS analysis_jobs (
+    id TEXT PRIMARY KEY,
+    document_id INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    request_json TEXT NOT NULL,
+    stages_json TEXT NOT NULL,
+    result_json TEXT,
+    error TEXT,
+    run_id INTEGER,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS analysis_batches (
+    id TEXT PRIMARY KEY,
+    status TEXT NOT NULL,
+    request_json TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS analysis_batch_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    batch_id TEXT NOT NULL,
+    document_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    job_id TEXT NOT NULL UNIQUE,
+    status TEXT NOT NULL DEFAULT 'pending',
+    error TEXT,
+    UNIQUE(batch_id, document_id)
+);
+CREATE INDEX IF NOT EXISTS batch_items_batch ON analysis_batch_items(batch_id);
 """
 
 
@@ -151,11 +189,42 @@ def db_cursor():
 
 
 def init_db() -> None:
-    """Create all tables if missing."""
+    """Create tables and add provenance columns to databases from older versions."""
     with _LOCK:
         conn = get_connection()
         try:
             conn.executescript(SCHEMA)
+            migrations = {
+                "documents": {
+                    "extraction_method": "TEXT DEFAULT ''",
+                    "ocr_pages": "INTEGER DEFAULT 0",
+                    "retired_sample": "INTEGER NOT NULL DEFAULT 0",
+                },
+                "agent_runs": {
+                    "retired_sample": "INTEGER NOT NULL DEFAULT 0",
+                    "analysis_json": "TEXT",
+                    "vision_json": "TEXT",
+                    "extraction_json": "TEXT",
+                    "analysis_profile": "TEXT",
+                    "analysis_mode": "TEXT",
+                },
+                "evidence": {
+                    "document_id": "INTEGER",
+                    "location_json": "TEXT",
+                    "extraction_method": "TEXT",
+                    "ocr_confidence": "REAL",
+                },
+                "findings": {
+                    "review_reasons_json": "TEXT",
+                },
+            }
+            for table, columns in migrations.items():
+                existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+                for column, declaration in columns.items():
+                    if column not in existing:
+                        conn.execute(
+                            f"ALTER TABLE {table} ADD COLUMN {column} {declaration}"
+                        )
             conn.commit()
         finally:
             conn.close()

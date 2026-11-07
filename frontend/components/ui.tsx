@@ -133,15 +133,15 @@ export function Meter({
   );
 }
 
-/** Indicates whether a panel is showing live backend data or bundled sample data. */
-export function SourceChip({ source }: { source: "mock" | "live" }) {
+/** Display backend connection state. */
+export function SourceChip({ source }: { source: "loading" | "unavailable" | "live" }) {
   return source === "live" ? (
     <StatusPill tone="verified" pulse>
       Live Backend
     </StatusPill>
   ) : (
     <StatusPill tone="info" dot={false}>
-      Bundled Sample Data
+      {source === "loading" ? "Connecting" : "Backend unavailable"}
     </StatusPill>
   );
 }

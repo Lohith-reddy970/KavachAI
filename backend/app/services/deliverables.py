@@ -10,10 +10,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+import textwrap
 
 from .. import config
 from ..domains.profiles import ANALYSIS_MODES, get_profile
-from . import scenario
 
 # --- Optional deps (guarded) --------------------------------------------------
 try:
@@ -50,13 +50,11 @@ def _now() -> str:
 
 
 def _subject(ctx) -> tuple[str, str]:
-    """Return a subject and disclaimer appropriate to sample or uploaded content."""
     uploaded = ctx.artifacts.get("document")
-    if uploaded:
-        return (f"Source document: {uploaded['filename']}",
-                "LOCAL ANALYSIS OUTPUT - REVIEW BEFORE OPERATIONAL USE")
-    return (f"Facility: {scenario.FACILITY} | {scenario.UNIT}",
-            "FICTIONAL SAMPLE DATA - NOT REAL FACILITY DATA")
+    if not uploaded:
+        raise ValueError("Reports require a source document.")
+    return (f"Source document: {uploaded['filename']}",
+            "LOCAL ANALYSIS OUTPUT - REVIEW BEFORE OPERATIONAL USE")
 
 
 def _analysis_labels(ctx) -> tuple[str, str]:
@@ -67,13 +65,35 @@ def _analysis_labels(ctx) -> tuple[str, str]:
     return profile.name, mode["name"] if mode else mode_id.replace("_", " ").title()
 
 
+def _evidence_location(ev: dict) -> str:
+    """Format a page-local text span and optional normalized OCR box."""
+    parts: list[str] = []
+    if ev.get("page") is not None:
+        parts.append(f"p.{ev['page']}")
+    location = ev.get("location") or {}
+    start, end = location.get("char_start"), location.get("char_end")
+    if isinstance(start, int) and isinstance(end, int):
+        parts.append(f"chars {start}-{end}")
+    bbox = location.get("bbox") or {}
+    if bbox:
+        parts.append(
+            "box x={:.1f}%, y={:.1f}%, w={:.1f}%, h={:.1f}%".format(
+                100 * bbox.get("x", 0), 100 * bbox.get("y", 0),
+                100 * bbox.get("width", 0), 100 * bbox.get("height", 0),
+            )
+        )
+    return "; ".join(parts)
+
+
 def _report_lines(ctx) -> list[str]:
     v = ctx.artifacts.get("verification", {})
     subject, disclaimer = _subject(ctx)
     profile_name, mode_name = _analysis_labels(ctx)
     summary = ctx.artifacts.get("reasoning_analysis", {}).get("text", "")
     is_summary = ctx.artifacts.get("analysis_mode") == "summary"
-    section_offset = int(is_summary and bool(summary))
+    vision = ctx.artifacts.get("vision_result") or {}
+    show_vision = bool(vision.get("text")) and not (is_summary and summary == vision["text"])
+    section_offset = int(is_summary and bool(summary)) + int(show_vision)
     lines = [
         f"{config.APP_NAME} - Document Analysis Report",
         subject,
@@ -86,23 +106,32 @@ def _report_lines(ctx) -> list[str]:
         "",
         "1. EXECUTIVE SUMMARY",
         ("   Verification score: not applicable to summary mode"
-         if is_summary else f"   Verification score: {ctx.verification_score}%"),
+         if is_summary else "   Verification score: not applicable (no source-cited findings)"
+         if ctx.verification_score is None else f"   Verification score: {ctx.verification_score}%"),
         ("   Evidence-backed: not applicable" if is_summary
          else f"   Evidence-backed: {ctx.evidence_backed}"),
         f"   Model routing: {ctx.routing.get('model')} ({ctx.routing.get('task_type')})",
     ]
     if is_summary and summary:
         lines.extend(["", "2. DOCUMENT SUMMARY", summary])
+    if show_vision:
+        number = 2 + int(is_summary and bool(summary))
+        lines.extend(["", f"{number}. IMAGE INSPECTION", vision["text"],
+                      f"Model: {vision['model']} | Provider: {vision['provider']}",
+                      "Advisory visual observations; OCR fields and source-text verification are separate."])
     findings_section = 2 + section_offset
     lines.extend(["", f"{findings_section}. FINDINGS"])
     for i, f in enumerate(ctx.findings, start=1):
         flag = " [NEEDS HUMAN REVIEW]" if f.get("needs_review") else ""
         lines.append(f"   {i}. [{f['severity'].upper()}] {f['title']}{flag}")
-        lines.append(f"      Equipment: {f['equipment_id']} | Confidence: {f['confidence']}%")
+        lines.append(f"      Reference / topic: {f['equipment_id'] or 'not specified'} | Confidence: {f['confidence']}%")
         lines.append(f"      {f['description']}")
         for ev in f.get("evidence", []):
-            lines.append(f"      - Evidence: {ev['source']} (p.{ev.get('page')}) "
-                         f"[{ev.get('confidence')}%]")
+            provenance = f"; extraction={ev.get('extraction_method')}" if ev.get("extraction_method") else ""
+            if ev.get("ocr_confidence") is not None:
+                provenance += f"; OCR confidence={ev['ocr_confidence']}%"
+            lines.append(f"      - Evidence: {ev['source']} ({_evidence_location(ev)}) "
+                         f"[{ev.get('confidence')}%]{provenance}")
             lines.append(f"        \"{ev.get('excerpt', '')}\"")
         lines.append("")
     if is_summary:
@@ -114,7 +143,8 @@ def _report_lines(ctx) -> list[str]:
     else:
         lines.extend([
             f"{findings_section + 1}. VERIFICATION",
-            f"   Score: {v.get('score')}% | Evidence-backed: {v.get('evidence_backed')}",
+            f"   Score: {str(v['score']) + '%' if v.get('score') is not None else 'not applicable'} | Evidence-backed: {v.get('evidence_backed')}",
+            *( ["   Visual observations have not been independently verified."] if ctx.artifacts.get("vision_result") else [] ),
             f"   Findings flagged for review: {', '.join(v.get('needs_human_review', [])) or 'none'}",
             "",
         ])
@@ -130,6 +160,7 @@ def _md_report(ctx) -> str:
     profile_name, mode_name = _analysis_labels(ctx)
     summary = ctx.artifacts.get("reasoning_analysis", {}).get("text", "")
     is_summary = ctx.artifacts.get("analysis_mode") == "summary"
+    vision = ctx.artifacts.get("vision_result") or {}
     md = [
         f"# {config.APP_NAME} - Document Analysis Report",
         "",
@@ -143,7 +174,8 @@ def _md_report(ctx) -> str:
         "## Executive Summary",
         "",
         ("- **Verification score:** Not applicable to summary mode"
-         if is_summary else f"- **Verification score:** {ctx.verification_score}%"),
+         if is_summary else "- **Verification score:** Not applicable (no source-cited findings)"
+         if ctx.verification_score is None else f"- **Verification score:** {ctx.verification_score}%"),
         ("- **Evidence-backed:** Not applicable"
          if is_summary else f"- **Evidence-backed:** {ctx.evidence_backed}"),
         f"- **Model routing:** {ctx.routing.get('model')} ({ctx.routing.get('task_type')})",
@@ -151,21 +183,32 @@ def _md_report(ctx) -> str:
     ]
     if is_summary and summary:
         md.extend(["## Document Summary", "", summary, ""])
+    if vision.get("text") and not (is_summary and summary == vision["text"]):
+        md.extend(["## Image Inspection", "", vision["text"], "",
+                   f"Model: {vision['model']} / Provider: {vision['provider']}", "",
+                   "Advisory visual observations. OCR fields and source-text verification are separate.", ""])
     md.extend(["## Findings", ""])
     for i, f in enumerate(ctx.findings, start=1):
         flag = " _(needs human review)_" if f.get("needs_review") else ""
         md.append(f"### {i}. {f['title']}{flag}")
         md.append("")
         md.append(f"- **Severity:** {f['severity']}")
-        md.append(f"- **Equipment:** {f['equipment_id']}")
+        md.append(f"- **Reference / topic:** {f['equipment_id'] or 'not specified'}")
         md.append(f"- **Confidence:** {f['confidence']}%")
         md.append(f"- {f['description']}")
         md.append("")
-        md.append("| Source | Page | Confidence | Excerpt |")
-        md.append("|---|---|---|---|")
+        md.append("| Source | Page and location | Extraction | OCR confidence | Confidence | Excerpt |")
+        md.append("|---|---|---|---:|---:|---|")
         for ev in f.get("evidence", []):
-            excerpt = ev.get("excerpt", "").replace("|", "/")
-            md.append(f"| {ev['source']} | {ev.get('page')} | {ev.get('confidence')}% | {excerpt} |")
+            excerpt = ev.get("excerpt", "").replace("|", "/").replace("\n", " ")
+            source = ev.get("source", "").replace("|", "/")
+            method = ev.get("extraction_method") or "text"
+            ocr_confidence = (f"{ev['ocr_confidence']}%"
+                              if ev.get("ocr_confidence") is not None else "—")
+            md.append(
+                f"| {source} | {_evidence_location(ev)} | {method} | {ocr_confidence} | "
+                f"{ev.get('confidence')}% | {excerpt} |"
+            )
         md.append("")
     if is_summary:
         md.extend([
@@ -178,7 +221,7 @@ def _md_report(ctx) -> str:
         md.extend([
             "## Verification",
             "",
-            f"- Score: **{v.get('score')}%**",
+            f"- Score: **{str(v['score']) + '%' if v.get('score') is not None else 'not applicable'}**",
             f"- Evidence-backed: **{v.get('evidence_backed')}**",
             f"- Flagged for review: {', '.join(v.get('needs_human_review', [])) or 'none'}",
             "",
@@ -231,16 +274,24 @@ def generate_all(ctx) -> list[dict]:
             if ctx.artifacts.get("analysis_mode") == "summary" and summary:
                 doc.add_heading("Document Summary", level=1)
                 doc.add_paragraph(summary)
+            vision = ctx.artifacts.get("vision_result") or {}
+            if vision.get("text") and not (ctx.artifacts.get("analysis_mode") == "summary" and summary == vision["text"]):
+                doc.add_heading("Image Inspection", level=1)
+                doc.add_paragraph(vision["text"])
+                doc.add_paragraph("Advisory visual observations; OCR fields are verified separately.")
             doc.add_heading("Findings", level=1)
             for f in ctx.findings:
                 doc.add_heading(f["title"], level=2)
                 doc.add_paragraph(
-                    f"Severity: {f['severity']} | Equipment: {f['equipment_id']} | "
+                    f"Severity: {f['severity']} | Reference / topic: {f['equipment_id']} | "
                     f"Confidence: {f['confidence']}%")
                 doc.add_paragraph(f["description"])
                 for ev in f.get("evidence", []):
+                    provenance = (f"; OCR confidence {ev['ocr_confidence']}%"
+                                  if ev.get("ocr_confidence") is not None else "")
                     doc.add_paragraph(
-                        f"Evidence: {ev['source']} (p.{ev.get('page')}) - {ev.get('excerpt','')}",
+                        f"Evidence: {ev['source']} ({_evidence_location(ev)}) - "
+                        f"{ev.get('excerpt', '')}{provenance}",
                         style="List Bullet")
             docx_path = out_dir / f"{base}.docx"
             doc.save(str(docx_path))
@@ -254,12 +305,21 @@ def generate_all(ctx) -> list[dict]:
             wb = openpyxl.Workbook()
             ws = wb.active
             ws.title = "Findings"
-            ws.append(["#", "Title", "Severity", "Equipment", "Confidence%",
+            ws.append(["#", "Title", "Severity", "Reference / topic", "Confidence%",
                        "Needs Review", "Evidence Count"])
             for i, f in enumerate(ctx.findings, start=1):
                 ws.append([i, f["title"], f["severity"], f["equipment_id"],
                            f["confidence"], bool(f["needs_review"]),
                            len(f.get("evidence", []))])
+            vision = ctx.artifacts.get("vision_result") or {}
+            if vision.get("text"):
+                visual = wb.create_sheet("Image Inspection")
+                visual.append(["Source", vision["source"]])
+                visual.append(["Model", vision["model"]])
+                visual.append(["Provider", vision["provider"]])
+                visual.append(["Status", "Advisory visual observations; not verified OCR fields"])
+                visual.append(["Observations", vision["text"]])
+                visual.cell(row=5, column=2).data_type = "s"
             xlsx_path = out_dir / f"{base}.xlsx"
             wb.save(str(xlsx_path))
             record(xlsx_path, "xlsx", "Document Fields and Findings (Excel)")
@@ -271,13 +331,16 @@ def generate_all(ctx) -> list[dict]:
         try:
             pdf_path = out_dir / f"{base}.pdf"
             c = _rl_canvas.Canvas(str(pdf_path), pagesize=letter)
+            c.setFont("Helvetica", 9)
             width, height = letter
             y = height - 50
-            for line in lines:
+            for line in (segment for line in lines for paragraph in line.splitlines() or [""]
+                         for segment in textwrap.wrap(paragraph, width=100) or [""]):
                 if y < 50:
                     c.showPage()
+                    c.setFont("Helvetica", 9)
                     y = height - 50
-                c.drawString(40, y, line[:110])
+                c.drawString(40, y, line)
                 y -= 14
             c.save()
             record(pdf_path, "pdf", "Document Analysis Report (PDF)")

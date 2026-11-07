@@ -1,0 +1,6 @@
+# Optional local Hugging Face Transformers inference.
+# Install dependencies and model weights before entering an air-gapped runtime.
+-r requirements.txt
+transformers>=4.45
+torch>=2.4
+safetensors>=0.4

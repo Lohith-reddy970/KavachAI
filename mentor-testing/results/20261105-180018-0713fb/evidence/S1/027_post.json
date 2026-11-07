@@ -1,0 +1,27 @@
+{
+  "at": "2026-11-05T18:00:45.100725+00:00",
+  "method": "POST",
+  "path": "/api/review/1/approve",
+  "request": {
+    "reviewer": "acceptance-test-reviewer",
+    "note": "Approval of controlled test input only."
+  },
+  "http_status": 200,
+  "elapsed_ms": 51,
+  "response": {
+    "ok": true,
+    "finding": {
+      "id": 1,
+      "run_id": 1,
+      "title": "A critical crack was observed on equipment T-401 and requires repair.",
+      "description": "Matched risk terms: crack, critical, repair. A critical crack was observed on equipment T-401 and requires repair.",
+      "severity": "high",
+      "confidence": 90.0,
+      "equipment_id": "T-401",
+      "needs_review": 1,
+      "review_reasons_json": "[\"high-risk severity 'high'\"]",
+      "review_status": "approved",
+      "created_at": "2026-11-05T18:00:44.718192+00:00"
+    }
+  }
+}

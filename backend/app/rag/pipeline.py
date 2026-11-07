@@ -1,18 +1,4 @@
-"""Deterministic RAG pipeline for KAVACH AI.
-
-Design goals:
-    * Works with ZERO heavy dependencies via a pure-python hash embedding.
-    * Transparently upgrades to sentence-transformers + chromadb when they are
-      importable (all such imports are guarded).
-    * Fully deterministic so retrieval results are stable across demo runs.
-
-Public API:
-    chunk_text(text, ...)            -> list[str]
-    hash_embedding(text, dim=256)    -> list[float]
-    embed(text)                      -> list[float]
-    cosine_similarity(a, b)          -> float
-    KnowledgeBase                    -> in-memory index with add/search
-"""
+"""Local document chunking, embeddings, and an in-memory cosine index."""
 from __future__ import annotations
 
 import hashlib
@@ -23,48 +9,16 @@ from typing import Any
 
 from .. import config
 
-# --- Optional heavy deps (guarded) -------------------------------------------
-_ST_AVAILABLE = False
-_CHROMA_AVAILABLE = False
-_st_model = None
-_ollama_embedding_failed = False
-_active_embedding_backend: str | None = None
-
-try:  # pragma: no cover - environment dependent
-    from sentence_transformers import SentenceTransformer  # type: ignore
-
-    _ST_AVAILABLE = True
-except Exception:  # noqa: BLE001
-    SentenceTransformer = None  # type: ignore
-
-try:  # pragma: no cover - environment dependent
-    import chromadb  # type: ignore
-
-    _CHROMA_AVAILABLE = True
-except Exception:  # noqa: BLE001
-    chromadb = None  # type: ignore
-
 EMBED_DIM = 256
 _WORD_RE = re.compile(r"[A-Za-z0-9]+")
 
 
 def backend_info() -> dict[str, Any]:
-    """Report which embedding/vector backends are active."""
-    if _active_embedding_backend:
-        embed_backend = _active_embedding_backend
-    elif config.INFERENCE_PROVIDER == "ollama" and not _ollama_embedding_failed:
-        embed_backend = f"ollama ({config.OLLAMA_EMBED_MODEL})"
-    elif _ST_AVAILABLE:
-        embed_backend = "sentence-transformers"
-    else:
-        embed_backend = "hash-embedding (pure-python fallback)"
-    vector_backend = "chromadb" if _CHROMA_AVAILABLE else "in-memory numpy-free cosine"
     return {
-        "embedding_backend": embed_backend,
-        "vector_backend": vector_backend,
-        "embedding_dim": EMBED_DIM,
-        "sentence_transformers_available": _ST_AVAILABLE,
-        "chromadb_available": _CHROMA_AVAILABLE,
+        "embedding_backend": "hash-embedding (local lexical retrieval)" if config.EMBEDDING_BACKEND == "hash"
+        else f"{config.INFERENCE_PROVIDER} (configured local encoder)",
+        "vector_backend": "in-memory cosine index",
+        "embedding_dim": EMBED_DIM if config.EMBEDDING_BACKEND == "hash" else None,
     }
 
 
@@ -118,40 +72,27 @@ def hash_embedding(text: str, dim: int = EMBED_DIM) -> list[float]:
 
 
 def embed(text: str) -> list[float]:
-    """Embed locally with Ollama/Nomic, Sentence Transformers, or hash fallback."""
-    global _st_model
-    global _ollama_embedding_failed, _active_embedding_backend
-
-    if config.INFERENCE_PROVIDER == "ollama" and not _ollama_embedding_failed:
-        try:
-            from ..models.providers import get_provider
-
-            vector = get_provider().embed(text, model=config.OLLAMA_EMBED_MODEL)
-            if vector:
-                _active_embedding_backend = f"ollama ({config.OLLAMA_EMBED_MODEL})"
-                return vector
-            _ollama_embedding_failed = True
-        except Exception:  # noqa: BLE001 - local RAG remains available without Ollama
-            _ollama_embedding_failed = True
-
-    if _ST_AVAILABLE:  # pragma: no cover - environment dependent
-        try:
-            if _st_model is None:
-                _st_model = SentenceTransformer("all-MiniLM-L6-v2")
-            vec = _st_model.encode(text, normalize_embeddings=True)
-            _active_embedding_backend = "sentence-transformers"
-            return [float(x) for x in vec]
-        except Exception:  # noqa: BLE001 - fall back on any failure
-            _active_embedding_backend = "hash-embedding (pure-python fallback)"
-            return hash_embedding(text)
-    _active_embedding_backend = "hash-embedding (pure-python fallback)"
-    return hash_embedding(text)
+    """Compute real vectors using a single configured backend for the index."""
+    if config.EMBEDDING_BACKEND == "hash":
+        return hash_embedding(text)
+    from ..models.providers import InferenceUnavailable, get_provider
+    model = (config.OLLAMA_EMBED_MODEL if config.INFERENCE_PROVIDER == "ollama"
+             else config.TRANSFORMERS_EMBED_MODEL_PATH)
+    try:
+        vector = get_provider().embed(text, model=model)
+        if not vector or not all(math.isfinite(x) for x in vector):
+            raise ValueError("Invalid embedding")
+        return vector
+    except Exception as exc:
+        raise InferenceUnavailable("Local embedding model unavailable. Check the configured encoder.") from exc
 
 
 def cosine_similarity(a: list[float], b: list[float]) -> float:
     if not a or not b:
         return 0.0
-    n = min(len(a), len(b))
+    if len(a) != len(b):
+        raise ValueError("Embedding dimensions differ; rebuild the index.")
+    n = len(a)
     dot = sum(a[i] * b[i] for i in range(n))
     na = math.sqrt(sum(x * x for x in a[:n]))
     nb = math.sqrt(sum(x * x for x in b[:n]))
@@ -167,6 +108,9 @@ class Chunk:
     source: str
     page: int
     embedding: list[float] = field(default_factory=list)
+    document_id: int | None = None
+    char_start: int | None = None
+    char_end: int | None = None
 
 
 class KnowledgeBase:
@@ -175,14 +119,33 @@ class KnowledgeBase:
     def __init__(self) -> None:
         self._chunks: list[Chunk] = []
 
-    def add(self, text: str, source: str, page: int = 1) -> int:
+    def add(self, text: str, source: str, page: int = 1, document_id: int | None = None) -> int:
         added = 0
+        # Map normalized chunk text to exact source spans, retaining whitespace for citations.
+        tokens = list(re.finditer(r"\S+", text))
+        cursor = 0
         for i, ch in enumerate(chunk_text(text)):
+            words = ch.split()
+            while cursor < len(tokens) and tokens[cursor].group() != words[0]:
+                cursor += 1
+            start = tokens[cursor].start() if cursor < len(tokens) else None
+            end_index = cursor + len(words) - 1
+            end = tokens[end_index].end() if end_index < len(tokens) else None
+            exact = text[start:end] if start is not None and end is not None else ch
             cid = f"{source}::p{page}::c{i}"
             self._chunks.append(
-                Chunk(id=cid, text=ch, source=source, page=page, embedding=embed(ch))
+                Chunk(id=cid, text=exact, source=source, page=page, embedding=embed(ch),
+                      document_id=document_id, char_start=start, char_end=end)
             )
             added += 1
+            # The next chunk starts at the overlap retained by chunk_text.
+            overlap_length, overlap_words = 0, 0
+            for word in reversed(words):
+                overlap_length += len(word) + 1
+                overlap_words += 1
+                if overlap_length >= 80:
+                    break
+            cursor += len(words) - overlap_words
         return added
 
     def add_chunk(self, text: str, source: str, page: int = 1) -> None:
@@ -191,7 +154,9 @@ class KnowledgeBase:
             Chunk(id=cid, text=text, source=source, page=page, embedding=embed(text))
         )
 
-    def search(self, query: str, top_k: int = 4) -> list[dict]:
+    def search(self, query: str, top_k: int = 4, document_ids: set[int] | None = None) -> list[dict]:
+        if not self._chunks:
+            return []
         qv = embed(query)
         scored = [
             {
@@ -200,8 +165,10 @@ class KnowledgeBase:
                 "page": c.page,
                 "text": c.text,
                 "score": round(cosine_similarity(qv, c.embedding), 4),
+                "document_id": c.document_id, "char_start": c.char_start, "char_end": c.char_end,
             }
             for c in self._chunks
+            if document_ids is None or c.document_id in document_ids
         ]
         scored.sort(key=lambda x: x["score"], reverse=True)
         return scored[:top_k]
@@ -216,7 +183,7 @@ class KnowledgeBase:
             "backend": backend_info(),
         }
 
-    def sample_chunks(self, n: int = 5) -> list[dict]:
+    def preview_chunks(self, n: int = 5) -> list[dict]:
         out = []
         for c in self._chunks[:n]:
             out.append({"id": c.id, "source": c.source, "page": c.page,

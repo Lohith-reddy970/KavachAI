@@ -1,0 +1,273 @@
+{
+  "at": "2026-11-05T18:00:26.789262+00:00",
+  "method": "GET",
+  "path": "/api/analysis/jobs/0eee4b33833e479ba31b68bc14e480ea",
+  "request": null,
+  "http_status": 200,
+  "elapsed_ms": 4,
+  "response": {
+    "id": "0eee4b33833e479ba31b68bc14e480ea",
+    "document_id": 1,
+    "status": "running",
+    "error": null,
+    "run_id": 1,
+    "created_at": "2026-11-05T18:00:21.692772+00:00",
+    "updated_at": "2026-11-05T18:00:21.991901+00:00",
+    "request": {
+      "document_id": 1,
+      "title": "Acceptance test S1",
+      "description": "Analyze the selected controlled test input using only its content.",
+      "task_type": null,
+      "profile": "industrial",
+      "analysis_mode": "risk_review",
+      "workflow": "pipeline",
+      "max_steps": null
+    },
+    "stages": [
+      {
+        "id": "validation",
+        "label": "Check document",
+        "description": "Validate the stored source and analysis settings.",
+        "status": "completed",
+        "message": "Document and settings checked",
+        "detail": "S1_inspection.pdf",
+        "started_at": "2026-11-05T18:00:21.716378+00:00",
+        "finished_at": "2026-11-05T18:00:21.722470+00:00",
+        "metadata": {
+          "profile": "industrial",
+          "mode": "risk_review"
+        },
+        "events": [
+          {
+            "at": "2026-11-05T18:00:21.716378+00:00",
+            "status": "running",
+            "message": "Checking the document and analysis settings",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T18:00:21.722470+00:00",
+            "status": "completed",
+            "message": "Document and settings checked",
+            "detail": "S1_inspection.pdf"
+          }
+        ]
+      },
+      {
+        "id": "extraction",
+        "label": "Extract text / OCR",
+        "description": "Read source pages and use local OCR where needed.",
+        "status": "completed",
+        "message": "Read 1 page(s); OCR supplied 0 page(s)",
+        "detail": "",
+        "started_at": "2026-11-05T18:00:21.724867+00:00",
+        "finished_at": "2026-11-05T18:00:21.926144+00:00",
+        "metadata": {
+          "page": 1,
+          "total_pages": 1,
+          "pages_read": 0,
+          "status": "ready",
+          "method": "pdf-text",
+          "page_count": 1,
+          "ocr_pages": 0,
+          "ocr_attempted_pages": 0,
+          "note": "",
+          "characters": 257
+        },
+        "events": [
+          {
+            "at": "2026-11-05T18:00:21.724867+00:00",
+            "status": "running",
+            "message": "Reading source pages",
+            "detail": "S1_inspection.pdf"
+          },
+          {
+            "at": "2026-11-05T18:00:21.916463+00:00",
+            "status": "running",
+            "message": "Page 1 of 1",
+            "detail": "Reading embedded text"
+          },
+          {
+            "at": "2026-11-05T18:00:21.926144+00:00",
+            "status": "completed",
+            "message": "Read 1 page(s); OCR supplied 0 page(s)",
+            "detail": ""
+          }
+        ]
+      },
+      {
+        "id": "routing",
+        "label": "Plan analysis",
+        "description": "Check provider policy, select models, and prepare the document.",
+        "status": "completed",
+        "message": "Document analysis prepared",
+        "detail": "Locally extracted text and page provenance are available to downstream agents; no external upload performed.",
+        "started_at": "2026-11-05T18:00:21.941067+00:00",
+        "finished_at": "2026-11-05T18:00:21.963300+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T18:00:21.941067+00:00",
+            "status": "running",
+            "message": "Starting routing stage",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T18:00:21.945254+00:00",
+            "status": "completed",
+            "message": "Provider policy checked",
+            "detail": "KAVACH_MODE=airgapped; local provider 'ollama' authorized; model connections are restricted by application policy; host isolation is deployment-managed."
+          },
+          {
+            "at": "2026-11-05T18:00:21.948603+00:00",
+            "status": "completed",
+            "message": "Task routed to qwen3:8b",
+            "detail": "task_type=reasoning; General analytical task; routing to qwen3:8b."
+          },
+          {
+            "at": "2026-11-05T18:00:21.952425+00:00",
+            "status": "completed",
+            "message": "Execution plan created",
+            "detail": "1. Parse source text and retain page provenance; OCR sparse pages if needed; 2. Bypass vision: the selected analysis uses extracted text; 3. Chunk source text and retrieve local context using embeddings and cosine similarity; 4. Assemble source-backed findings; retain model reasoning as advisory output; 5. Cross-check cited excerpts; apply severity, confidence, and explicit-review gates; 6. Generate local deliverables and persist the auditable run trace"
+          },
+          {
+            "at": "2026-11-05T18:00:21.956302+00:00",
+            "status": "completed",
+            "message": "Uploaded document loaded",
+            "detail": "Loaded S1_inspection.pdf (1 page(s), 257 extracted characters; method=pdf-text)."
+          },
+          {
+            "at": "2026-11-05T18:00:21.959758+00:00",
+            "status": "completed",
+            "message": "Document analysis prepared",
+            "detail": "Locally extracted text and page provenance are available to downstream agents; no external upload performed."
+          },
+          {
+            "at": "2026-11-05T18:00:21.963300+00:00",
+            "status": "completed",
+            "message": "Document analysis prepared",
+            "detail": "Locally extracted text and page provenance are available to downstream agents; no external upload performed."
+          }
+        ]
+      },
+      {
+        "id": "vision",
+        "label": "Inspect images",
+        "description": "Describe visual input when the selected task needs it.",
+        "status": "skipped",
+        "message": "Vision analysis skipped",
+        "detail": "No image input in this document; text files are handled by local extraction and source-term analysis.",
+        "started_at": "2026-11-05T18:00:21.966902+00:00",
+        "finished_at": "2026-11-05T18:00:21.973280+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T18:00:21.966902+00:00",
+            "status": "running",
+            "message": "Starting vision stage",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T18:00:21.970146+00:00",
+            "status": "skipped",
+            "message": "Vision analysis skipped",
+            "detail": "No image input in this document; text files are handled by local extraction and source-term analysis."
+          },
+          {
+            "at": "2026-11-05T18:00:21.973280+00:00",
+            "status": "skipped",
+            "message": "Vision analysis skipped",
+            "detail": "No image input in this document; text files are handled by local extraction and source-term analysis."
+          }
+        ]
+      },
+      {
+        "id": "knowledge",
+        "label": "Retrieve context",
+        "description": "Build local retrieval vectors and find relevant passages.",
+        "status": "completed",
+        "message": "Knowledge retrieved",
+        "detail": "Indexed 1 chunk(s) of S1_inspection.pdf locally; 1 relevant to the task.",
+        "started_at": "2026-11-05T18:00:21.976480+00:00",
+        "finished_at": "2026-11-05T18:00:21.984237+00:00",
+        "metadata": {},
+        "events": [
+          {
+            "at": "2026-11-05T18:00:21.976480+00:00",
+            "status": "running",
+            "message": "Starting knowledge stage",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T18:00:21.980416+00:00",
+            "status": "completed",
+            "message": "Knowledge retrieved",
+            "detail": "Indexed 1 chunk(s) of S1_inspection.pdf locally; 1 relevant to the task."
+          },
+          {
+            "at": "2026-11-05T18:00:21.984237+00:00",
+            "status": "completed",
+            "message": "Knowledge retrieved",
+            "detail": "Indexed 1 chunk(s) of S1_inspection.pdf locally; 1 relevant to the task."
+          }
+        ]
+      },
+      {
+        "id": "reasoning",
+        "label": "Analyze content",
+        "description": "Generate a summary, match review terms, or extract literal fields.",
+        "status": "running",
+        "message": "Generating local model analysis",
+        "detail": "The configured local model is processing the source and retrieved passages.",
+        "started_at": "2026-11-05T18:00:21.988123+00:00",
+        "finished_at": null,
+        "metadata": {
+          "model": "qwen3:8b",
+          "provider": "ollama"
+        },
+        "events": [
+          {
+            "at": "2026-11-05T18:00:21.988123+00:00",
+            "status": "running",
+            "message": "Starting reasoning stage",
+            "detail": ""
+          },
+          {
+            "at": "2026-11-05T18:00:21.991901+00:00",
+            "status": "running",
+            "message": "Generating local model analysis",
+            "detail": "The configured local model is processing the source and retrieved passages."
+          }
+        ]
+      },
+      {
+        "id": "verification",
+        "label": "Verify sources",
+        "description": "Check citations and decide which findings need human review.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "deliverables",
+        "label": "Save results",
+        "description": "Save the run, findings, and downloadable report files.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      }
+    ],
+    "result": null,
+    "document": {
+      "id": 1,
+      "filename": "S1_inspection.pdf"
+    }
+  }
+}

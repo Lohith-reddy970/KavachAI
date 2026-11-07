@@ -1,9 +1,4 @@
-"""Document agent - loads the documents a run will work on.
-
-For an uploaded document it reports the text extracted locally from the file.
-For the demo scenario it loads the fictional document set and reports a (mock)
-OCR step; no real OCR engine is invoked there.
-"""
+"""Document agent - loads and locally extracts the documents a run will use."""
 from __future__ import annotations
 
 from .base import BaseAgent, RunContext
@@ -16,28 +11,32 @@ class DocumentAgent(BaseAgent):
         uploaded = ctx.artifacts.get("document")
         if uploaded:
             text = ctx.artifacts.get("document_text", "")
+            extraction = ctx.artifacts.get("document_extraction", {})
             ctx.artifacts["documents"] = [uploaded["filename"]]
             ctx.add_step(self.name, "Uploaded document loaded",
-                         detail=f"Loaded {uploaded['filename']} ({len(text)} extracted characters).")
+                         detail=(f"Loaded {uploaded['filename']} ({extraction.get('page_count', 0)} page(s), "
+                                 f"{len(text)} extracted characters; method={extraction.get('method', 'unknown')})."))
+            attempted = int(extraction.get("ocr_attempted_pages", 0))
+            ocr_pages = int(extraction.get("ocr_pages", 0))
+            if attempted:
+                ctx.add_step(
+                    self.name,
+                    "OCR completed" if ocr_pages else "OCR found no readable text",
+                    status="completed" if ocr_pages else "warning",
+                    detail=(f"Local Tesseract OCR returned text on {ocr_pages} of "
+                            f"{attempted} attempted page(s)."),
+                )
             note = ctx.artifacts.get("document_note", "")
             if text.strip():
+                detail = ("Locally extracted text and page provenance are available "
+                          "to downstream agents; no external upload performed.")
+                if note:
+                    detail += f" Extraction note: {note}"
                 ctx.add_step(self.name, "Document analysis prepared",
-                             detail="Local text is available to downstream agents; "
-                                    "no external upload performed.")
+                             detail=detail)
             else:
                 ctx.add_step(self.name, "No text extracted", status="warning",
                              detail=f"Nothing to analyse: {note or 'the document is empty'}.")
             return ctx
 
-        from ..services import scenario
-        docs = [d["filename"] for d in scenario.DEMO_DOCUMENTS]
-        ctx.artifacts["documents"] = docs
-        ctx.add_step(self.name, "Documents loaded",
-                     detail=f"Loaded {len(docs)} documents: {', '.join(docs)}")
-
-        text_docs = [d for d in scenario.DEMO_DOCUMENTS if d["doc_type"] in
-                     {"report", "manual", "calculation"}]
-        ctx.add_step(self.name, "OCR completed",
-                     detail=f"OCR extracted text from {len(text_docs)} PDF documents "
-                            "(inspection report, manual, calculation).")
-        return ctx
+        raise ValueError("A stored document is required.")

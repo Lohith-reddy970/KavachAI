@@ -1,0 +1,104 @@
+{
+  "at": "2026-11-05T18:42:13.153328+00:00",
+  "checks": [
+    {
+      "name": "pdf temporary upload",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "pdf preview",
+      "passed": true,
+      "actual": {
+        "status": 200,
+        "kind": "pdf"
+      }
+    },
+    {
+      "name": "pdf exact original bytes",
+      "passed": true,
+      "actual": {
+        "status": 200,
+        "sha256": "c9f9de417928ca2f93bd1b362900ce013eb3dbe9a4e933657d2bab88c0e956e9"
+      }
+    },
+    {
+      "name": "pdf original download",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "PDF byte-range access",
+      "passed": true,
+      "actual": 206
+    },
+    {
+      "name": "pdf delete source",
+      "passed": true,
+      "actual": {
+        "status": 200,
+        "file_removed": true
+      }
+    },
+    {
+      "name": "pdf unavailable after deletion",
+      "passed": true,
+      "actual": 404
+    },
+    {
+      "name": "png temporary upload",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "png preview",
+      "passed": true,
+      "actual": {
+        "status": 200,
+        "kind": "image"
+      }
+    },
+    {
+      "name": "png exact original bytes",
+      "passed": true,
+      "actual": {
+        "status": 200,
+        "sha256": "fbf011bbdcaa5e32691d67d4e86eb764c4010ccd539112051b436395b03b320d"
+      }
+    },
+    {
+      "name": "png original download",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "png delete source",
+      "passed": true,
+      "actual": {
+        "status": 200,
+        "file_removed": true
+      }
+    },
+    {
+      "name": "png unavailable after deletion",
+      "passed": true,
+      "actual": 404
+    },
+    {
+      "name": "Original Vault records retained",
+      "passed": true,
+      "actual": 7
+    },
+    {
+      "name": "Temporary test records removed",
+      "passed": true,
+      "actual": 2
+    },
+    {
+      "name": "Updated Vault route responds",
+      "passed": true,
+      "actual": 200
+    }
+  ],
+  "passed": true
+}

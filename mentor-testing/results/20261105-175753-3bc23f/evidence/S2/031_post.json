@@ -1,0 +1,137 @@
+{
+  "at": "2026-11-05T17:58:19.651688+00:00",
+  "method": "POST",
+  "path": "/api/analysis/jobs",
+  "request": {
+    "document_id": 2,
+    "title": "Acceptance test S2",
+    "description": "Analyze the selected controlled test input using only its content.",
+    "profile": "finance",
+    "analysis_mode": "extract_fields",
+    "workflow": "pipeline"
+  },
+  "http_status": 202,
+  "elapsed_ms": 17,
+  "response": {
+    "id": "2cc935b46d0943aba45093b8fcddfee3",
+    "document_id": 2,
+    "status": "queued",
+    "error": null,
+    "run_id": null,
+    "created_at": "2026-11-05T17:58:19.641452+00:00",
+    "updated_at": "2026-11-05T17:58:19.641463+00:00",
+    "request": {
+      "document_id": 2,
+      "title": "Acceptance test S2",
+      "description": "Analyze the selected controlled test input using only its content.",
+      "task_type": null,
+      "profile": "finance",
+      "analysis_mode": "extract_fields",
+      "workflow": "pipeline",
+      "max_steps": null
+    },
+    "stages": [
+      {
+        "id": "validation",
+        "label": "Check document",
+        "description": "Validate the stored source and analysis settings.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "extraction",
+        "label": "Extract text / OCR",
+        "description": "Read source pages and use local OCR where needed.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "routing",
+        "label": "Plan analysis",
+        "description": "Check provider policy, select models, and prepare the document.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "vision",
+        "label": "Inspect images",
+        "description": "Describe visual input when the selected task needs it.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "knowledge",
+        "label": "Retrieve context",
+        "description": "Build local retrieval vectors and find relevant passages.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "reasoning",
+        "label": "Analyze content",
+        "description": "Generate a summary, match review terms, or extract literal fields.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "verification",
+        "label": "Verify sources",
+        "description": "Check citations and decide which findings need human review.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      },
+      {
+        "id": "deliverables",
+        "label": "Save results",
+        "description": "Save the run, findings, and downloadable report files.",
+        "status": "pending",
+        "message": "",
+        "detail": "",
+        "started_at": null,
+        "finished_at": null,
+        "metadata": {},
+        "events": []
+      }
+    ],
+    "result": null,
+    "document": {
+      "id": 2,
+      "filename": "S2_invoice.png"
+    }
+  }
+}

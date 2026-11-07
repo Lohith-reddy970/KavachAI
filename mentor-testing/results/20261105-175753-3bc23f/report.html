@@ -1,0 +1,252 @@
+<!doctype html><html lang='en'><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>KAVACH AI - Five acceptance tests</title>
+<style>body{font:16px/1.6 Arial,sans-serif;background:#f2f5f8;color:#142333;margin:0}main{max-width:1100px;margin:auto;padding:32px}h1{font-size:34px;line-height:1.2}h2{font-size:23px;margin:5px 0}h3{font-size:17px;margin-bottom:5px}a{color:#1659a0}article,.intro{background:white;border:1px solid #dce3ea;border-radius:12px;padding:26px;margin:22px 0}header{display:flex;justify-content:space-between;gap:20px}small{color:#526679}.pass{color:#137447}.fail{color:#a72525}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.stats p{background:#eaf0f6;border-radius:8px;padding:18px}.stats b{display:block;font-size:32px}table{border-collapse:collapse;width:100%}td,th{padding:12px;text-align:left;border-bottom:1px solid #dce3ea}pre{background:#f3f6f9;padding:16px;border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}summary{cursor:pointer;font-weight:bold}@media(max-width:650px){main{padding:12px}.stats{grid-template-columns:1fr}header{display:block}td,th{padding:5px;font-size:12px}}@media print{body{background:white}main{padding:0}article{break-before:page;border:0}pre{font-size:10px}details{display:block}}</style>
+<main><h1>KAVACH AI: five acceptance test results</h1><p>Executed 2026-11-05T17:58:45.087286+00:00. Real API responses and local model execution; isolated test storage.</p>
+<div class='stats'><p><b>3/3</b>Successful workflow scenarios</p><p><b>2/2</b>Expected failure scenarios</p><p><b>5/5</b>Passing test verdicts</p></div>
+<section class='intro'><h2>How to explain the two failures</h2><p>F1 and F2 intentionally submit invalid input. Their application operations should fail with clear HTTP errors. The test verdict is PASS when that rejection is correct. An unexpected server error or acceptance would produce FAIL. This report never changes results to force a 3/2 split.</p><p><a href='results.json'>Full JSON</a> / <a href='results.csv'>Five-row CSV</a> / <a href='report.md'>Markdown report</a> / <a href='backend.log'>API server log</a></p><table><thead><tr><th>Case</th><th>Scenario</th><th>Actual outcome</th><th>Test verdict</th></tr></thead><tbody><tr><td><a href='#S1'>S1</a></td><td>PDF review, citations, and human approval</td><td>successful</td><td class='pass'>PASS</td></tr><tr><td><a href='#S2'>S2</a></td><td>PNG inspection, OCR, and literal fields</td><td>successful</td><td class='pass'>PASS</td></tr><tr><td><a href='#S3'>S3</a></td><td>Bounded planner execution</td><td>successful</td><td class='pass'>PASS</td></tr><tr><td><a href='#F1'>F1</a></td><td>Unsupported file rejected</td><td>expected rejection</td><td class='pass'>PASS</td></tr><tr><td><a href='#F2'>F2</a></td><td>Missing source document rejected</td><td>expected rejection</td><td class='pass'>PASS</td></tr></tbody></table></section>
+<article id='S1'><header><div><small>S1 / Successful workflow</small><h2>PDF review, citations, and human approval</h2></div><strong class='pass'>PASS</strong></header>
+<p>Demonstrate PDF extraction, real local reasoning, source verification, review gating, and report download.</p><p><b>Actual scenario outcome:</b> successful / 23.32s</p>
+<p><a href='inputs/S1_inspection.pdf'>Open test input</a></p><details><summary>How to demonstrate</summary><ol><li>Upload the controlled PDF.</li><li>Run Industrial risk review and observe the saved job.</li><li>Check the high-severity source match and exact citation.</li><li>Approve the held test finding, then download the text report.</li></ol></details>
+<h3>Expected result</h3><p>Analysis finishes with a source-cited high-severity match, initially held for review. The reviewer decision completes the run and a report downloads.</p><h3>Observed result</h3><pre>{
+  &quot;document_id&quot;: 1,
+  &quot;job_id&quot;: &quot;bde3c2be424e4001ad19bcdd943d224a&quot;,
+  &quot;job_status&quot;: &quot;completed&quot;,
+  &quot;run_id&quot;: 1,
+  &quot;stage_statuses&quot;: {
+    &quot;validation&quot;: &quot;completed&quot;,
+    &quot;extraction&quot;: &quot;completed&quot;,
+    &quot;routing&quot;: &quot;completed&quot;,
+    &quot;vision&quot;: &quot;skipped&quot;,
+    &quot;knowledge&quot;: &quot;completed&quot;,
+    &quot;reasoning&quot;: &quot;completed&quot;,
+    &quot;verification&quot;: &quot;completed&quot;,
+    &quot;deliverables&quot;: &quot;completed&quot;
+  },
+  &quot;run_status&quot;: &quot;awaiting_review&quot;,
+  &quot;fields_or_matches&quot;: 1,
+  &quot;verification_score&quot;: 100.0,
+  &quot;evidence_backed&quot;: &quot;1/1&quot;,
+  &quot;report_formats&quot;: [
+    &quot;txt&quot;,
+    &quot;md&quot;,
+    &quot;docx&quot;,
+    &quot;xlsx&quot;,
+    &quot;pdf&quot;
+  ],
+  &quot;reasoning_model&quot;: &quot;qwen3:8b&quot;,
+  &quot;run_status_after_review&quot;: &quot;completed&quot;
+}</pre>
+<h3>Assertions</h3><ul><li class='pass'>PASS: Upload succeeds</li><li class='pass'>PASS: Job accepted</li><li class='pass'>PASS: Analysis finishes</li><li class='pass'>PASS: Real local reasoning output is recorded</li><li class='pass'>PASS: PDF text extracted</li><li class='pass'>PASS: Critical source match found</li><li class='pass'>PASS: Citations match the supplied PDF</li><li class='pass'>PASS: High-risk result is held for review</li><li class='pass'>PASS: Review decision stored for finding 1</li><li class='pass'>PASS: All required decisions complete the run</li><li class='pass'>PASS: Actual report downloads</li></ul><h3>Explanation for your mentor</h3><p>The successful behavior includes the human-review hold. A critical finding must not be silently cleared. Citation verification checks the excerpt against the supplied PDF; it does not prove the inspection claim is true.</p>
+<details><summary>Raw API evidence (29 responses)</summary><ul><li><a href='evidence/S1/001_post.json'>001_post.json</a></li><li><a href='evidence/S1/002_post.json'>002_post.json</a></li><li><a href='evidence/S1/003_get.json'>003_get.json</a></li><li><a href='evidence/S1/004_get.json'>004_get.json</a></li><li><a href='evidence/S1/005_get.json'>005_get.json</a></li><li><a href='evidence/S1/006_get.json'>006_get.json</a></li><li><a href='evidence/S1/007_get.json'>007_get.json</a></li><li><a href='evidence/S1/008_get.json'>008_get.json</a></li><li><a href='evidence/S1/009_get.json'>009_get.json</a></li><li><a href='evidence/S1/010_get.json'>010_get.json</a></li><li><a href='evidence/S1/011_get.json'>011_get.json</a></li><li><a href='evidence/S1/012_get.json'>012_get.json</a></li><li><a href='evidence/S1/013_get.json'>013_get.json</a></li><li><a href='evidence/S1/014_get.json'>014_get.json</a></li><li><a href='evidence/S1/015_get.json'>015_get.json</a></li><li><a href='evidence/S1/016_get.json'>016_get.json</a></li><li><a href='evidence/S1/017_get.json'>017_get.json</a></li><li><a href='evidence/S1/018_get.json'>018_get.json</a></li><li><a href='evidence/S1/019_get.json'>019_get.json</a></li><li><a href='evidence/S1/020_get.json'>020_get.json</a></li><li><a href='evidence/S1/021_get.json'>021_get.json</a></li><li><a href='evidence/S1/022_get.json'>022_get.json</a></li><li><a href='evidence/S1/023_get.json'>023_get.json</a></li><li><a href='evidence/S1/024_get.json'>024_get.json</a></li><li><a href='evidence/S1/025_get.json'>025_get.json</a></li><li><a href='evidence/S1/026_get.json'>026_get.json</a></li><li><a href='evidence/S1/027_post.json'>027_post.json</a></li><li><a href='evidence/S1/028_get.json'>028_get.json</a></li><li><a href='evidence/S1/029_get.json'>029_get.json</a></li></ul></details></article><article id='S2'><header><div><small>S2 / Successful workflow</small><h2>PNG inspection, OCR, and literal fields</h2></div><strong class='pass'>PASS</strong></header>
+<p>Demonstrate real image inspection even in Extract fields mode, local OCR, and source-backed values.</p><p><b>Actual scenario outcome:</b> successful / 17.20s</p>
+<p><a href='inputs/S2_invoice.png'>Open test input</a></p><details><summary>How to demonstrate</summary><ol><li>Upload the controlled PNG.</li><li>Select Finance and Extract fields.</li><li>Wait for Inspect images to finish with the local vision model.</li><li>Check the date/amount fields, OCR page count, and separate visual observations.</li></ol></details>
+<h3>Expected result</h3><p>Image inspection completes, OCR reads the page, and the known date and amount appear as literal fields with citations. Visual observations are shown separately.</p><h3>Observed result</h3><pre>{
+  &quot;document_id&quot;: 2,
+  &quot;job_id&quot;: &quot;2cc935b46d0943aba45093b8fcddfee3&quot;,
+  &quot;job_status&quot;: &quot;completed&quot;,
+  &quot;run_id&quot;: 2,
+  &quot;stage_statuses&quot;: {
+    &quot;validation&quot;: &quot;completed&quot;,
+    &quot;extraction&quot;: &quot;completed&quot;,
+    &quot;routing&quot;: &quot;completed&quot;,
+    &quot;vision&quot;: &quot;completed&quot;,
+    &quot;knowledge&quot;: &quot;completed&quot;,
+    &quot;reasoning&quot;: &quot;completed&quot;,
+    &quot;verification&quot;: &quot;completed&quot;,
+    &quot;deliverables&quot;: &quot;completed&quot;
+  },
+  &quot;run_status&quot;: &quot;completed&quot;,
+  &quot;fields_or_matches&quot;: 5,
+  &quot;verification_score&quot;: 100.0,
+  &quot;evidence_backed&quot;: &quot;5/5&quot;,
+  &quot;report_formats&quot;: [
+    &quot;txt&quot;,
+    &quot;md&quot;,
+    &quot;docx&quot;,
+    &quot;xlsx&quot;,
+    &quot;pdf&quot;
+  ],
+  &quot;vision_model&quot;: &quot;llava:7b&quot;,
+  &quot;vision_output&quot;: &quot;The image shows a document with the following visible content:\n\n```\nCONTROLLED ACCEPTANCE TEST INPUT\nTEST INVOICE - NOT A REAL PAYMENT\n\nInvoice: INV-2026-005\nDate: 2026-11-05\nTotal: INR 2500\n\nOwner: Test Coordinator\nContact: quality@example.org\n```\n\nThe document appears to be a structured form with fields for an invoice, date, total amount, owner, and contact information. The \&quot;Total\&quot; field is in Indian Rupees (INR). The \&quot;Owner\&quot; field is filled with \&quot;Test Coordinator,\&quot; and the \&quot;Contact\&quot; field is filled with an email address. The \&quot;Invoice\&quot; and \&quot;Date\&quot; fields are also filled with specific values. The \&quot;Total\&quot; field is the only one that is filled in, while the \&quot;Invoice\&quot; and \&quot;Date\&quot; fields are partially visible. The \&quot;Owner\&quot; and \&quot;Contact\&quot; fields are fully visible. The \&quot;Invoice\&quot; field is a combination of letters and numbers, and the \&quot;Date\&quot; field is in the format of year-month-day. The \&quot;Total\&quot; field is in the format of currency followed by the amount. The \&quot;Invoice\&quot; and \&quot;Date\&quot; fields are aligned to the left, while the \&quot;Total\&quot; field is aligned to the right. The \&quot;Owner\&quot; and \&quot;Contact\&quot; fields are aligned to the left. The document has a plain background and is presented in a portrait orientation.&quot;,
+  &quot;ocr_pages&quot;: 1,
+  &quot;extracted_fields&quot;: [
+    &quot;Extracted reference identifier: INV-2026-005&quot;,
+    &quot;Extracted date: 2026-11-05&quot;,
+    &quot;Extracted amount: INR 2500&quot;,
+    &quot;Extracted owner / approver: Test Coordinator&quot;,
+    &quot;Extracted email: quality@example.org&quot;
+  ]
+}</pre>
+<h3>Assertions</h3><ul><li class='pass'>PASS: Upload succeeds</li><li class='pass'>PASS: Job accepted</li><li class='pass'>PASS: Analysis finishes</li><li class='pass'>PASS: Image inspection ran</li><li class='pass'>PASS: Real vision output is saved separately</li><li class='pass'>PASS: Local OCR processed the page</li><li class='pass'>PASS: Known date is extracted</li><li class='pass'>PASS: Known amount is extracted</li><li class='pass'>PASS: Literal field citations verify</li></ul><h3>Explanation for your mentor</h3><p>This checks the PNG regression: field extraction must not skip vision. The field assertions compare known input values with actual output. A nonempty model description proves the path ran, not that every visual statement is accurate.</p>
+<details><summary>Raw API evidence (20 responses)</summary><ul><li><a href='evidence/S2/030_post.json'>030_post.json</a></li><li><a href='evidence/S2/031_post.json'>031_post.json</a></li><li><a href='evidence/S2/032_get.json'>032_get.json</a></li><li><a href='evidence/S2/033_get.json'>033_get.json</a></li><li><a href='evidence/S2/034_get.json'>034_get.json</a></li><li><a href='evidence/S2/035_get.json'>035_get.json</a></li><li><a href='evidence/S2/036_get.json'>036_get.json</a></li><li><a href='evidence/S2/037_get.json'>037_get.json</a></li><li><a href='evidence/S2/038_get.json'>038_get.json</a></li><li><a href='evidence/S2/039_get.json'>039_get.json</a></li><li><a href='evidence/S2/040_get.json'>040_get.json</a></li><li><a href='evidence/S2/041_get.json'>041_get.json</a></li><li><a href='evidence/S2/042_get.json'>042_get.json</a></li><li><a href='evidence/S2/043_get.json'>043_get.json</a></li><li><a href='evidence/S2/044_get.json'>044_get.json</a></li><li><a href='evidence/S2/045_get.json'>045_get.json</a></li><li><a href='evidence/S2/046_get.json'>046_get.json</a></li><li><a href='evidence/S2/047_get.json'>047_get.json</a></li><li><a href='evidence/S2/048_get.json'>048_get.json</a></li><li><a href='evidence/S2/049_get.json'>049_get.json</a></li></ul></details></article><article id='S3'><header><div><small>S3 / Successful workflow</small><h2>Bounded planner execution</h2></div><strong class='pass'>PASS</strong></header>
+<p>Demonstrate the real local planner selecting allowlisted tools and finishing within its step budget.</p><p><b>Actual scenario outcome:</b> successful / 8.17s</p>
+<p><a href='inputs/S3_project_record.txt'>Open test input</a></p><details><summary>How to demonstrate</summary><ol><li>Upload the controlled text record.</li><li>Run the bounded planner in Extract fields mode.</li><li>Inspect its actual action trace and stop reason.</li><li>Check source-backed values and generated reports.</li></ol></details>
+<h3>Expected result</h3><p>Planner stops with finished within 10 steps, uses permitted actions, extracts the known date/amount, and saves reports.</p><h3>Observed result</h3><pre>{
+  &quot;document_id&quot;: 3,
+  &quot;job_id&quot;: &quot;871230ca472e4e8eb51ad3f233dbd8af&quot;,
+  &quot;job_status&quot;: &quot;completed&quot;,
+  &quot;run_id&quot;: 3,
+  &quot;stage_statuses&quot;: {
+    &quot;validation&quot;: &quot;completed&quot;,
+    &quot;extraction&quot;: &quot;completed&quot;,
+    &quot;routing&quot;: &quot;completed&quot;,
+    &quot;vision&quot;: &quot;skipped&quot;,
+    &quot;knowledge&quot;: &quot;completed&quot;,
+    &quot;reasoning&quot;: &quot;completed&quot;,
+    &quot;verification&quot;: &quot;completed&quot;,
+    &quot;deliverables&quot;: &quot;completed&quot;
+  },
+  &quot;run_status&quot;: &quot;completed&quot;,
+  &quot;fields_or_matches&quot;: 5,
+  &quot;verification_score&quot;: 100.0,
+  &quot;evidence_backed&quot;: &quot;5/5&quot;,
+  &quot;report_formats&quot;: [
+    &quot;txt&quot;,
+    &quot;md&quot;,
+    &quot;docx&quot;,
+    &quot;xlsx&quot;,
+    &quot;pdf&quot;
+  ],
+  &quot;planner&quot;: {
+    &quot;provider&quot;: &quot;ollama&quot;,
+    &quot;max_steps&quot;: 10,
+    &quot;steps_used&quot;: 5,
+    &quot;stop_reason&quot;: &quot;finished&quot;,
+    &quot;trace&quot;: [
+      {
+        &quot;step&quot;: 1,
+        &quot;action&quot;: &quot;inspect_document&quot;,
+        &quot;reason&quot;: &quot;Documents have not been loaded yet.&quot;,
+        &quot;args&quot;: {},
+        &quot;status&quot;: &quot;completed&quot;
+      },
+      {
+        &quot;step&quot;: 2,
+        &quot;action&quot;: &quot;search_knowledge&quot;,
+        &quot;reason&quot;: &quot;No supporting knowledge retrieved yet.&quot;,
+        &quot;args&quot;: {
+          &quot;query&quot;: &quot;Analyze the selected controlled test input using only its content.&quot;,
+          &quot;top_k&quot;: 4
+        },
+        &quot;status&quot;: &quot;completed&quot;
+      },
+      {
+        &quot;step&quot;: 3,
+        &quot;action&quot;: &quot;reason&quot;,
+        &quot;reason&quot;: &quot;Evidence gathered; ready to synthesize findings.&quot;,
+        &quot;args&quot;: {},
+        &quot;status&quot;: &quot;completed&quot;
+      },
+      {
+        &quot;step&quot;: 4,
+        &quot;action&quot;: &quot;verify&quot;,
+        &quot;reason&quot;: &quot;Findings exist but are not verified.&quot;,
+        &quot;args&quot;: {},
+        &quot;status&quot;: &quot;completed&quot;
+      },
+      {
+        &quot;step&quot;: 5,
+        &quot;action&quot;: &quot;finish&quot;,
+        &quot;reason&quot;: &quot;All required steps are complete.&quot;,
+        &quot;args&quot;: {},
+        &quot;status&quot;: &quot;completed&quot;
+      }
+    ],
+    &quot;requires_human_review&quot;: false,
+    &quot;review_required&quot;: [],
+    &quot;allowed_tools&quot;: [
+      &quot;search_knowledge&quot;,
+      &quot;inspect_document&quot;,
+      &quot;analyze_pid&quot;,
+      &quot;reason&quot;,
+      &quot;verify&quot;,
+      &quot;human_review&quot;
+    ]
+  },
+  &quot;extracted_fields&quot;: [
+    &quot;Extracted reference identifier: PRJ-2026-103&quot;,
+    &quot;Extracted date: 2026-11-06&quot;,
+    &quot;Extracted amount: INR 4800&quot;,
+    &quot;Extracted owner / approver: Test Coordinator&quot;,
+    &quot;Extracted email: planner@example.org&quot;
+  ]
+}</pre>
+<h3>Assertions</h3><ul><li class='pass'>PASS: Upload succeeds</li><li class='pass'>PASS: Job accepted</li><li class='pass'>PASS: Analysis finishes</li><li class='pass'>PASS: Planner finishes normally</li><li class='pass'>PASS: Step budget respected</li><li class='pass'>PASS: Only permitted actions used</li><li class='pass'>PASS: Planner returns known literal values</li><li class='pass'>PASS: Planner saves reports and verifies citations</li></ul><h3>Explanation for your mentor</h3><p>This is the agentic path rather than the fixed pipeline. The trace shows which allowed action was selected at each step. Awaiting human review is an acceptable completed-analysis outcome.</p>
+<details><summary>Raw API evidence (11 responses)</summary><ul><li><a href='evidence/S3/050_post.json'>050_post.json</a></li><li><a href='evidence/S3/051_post.json'>051_post.json</a></li><li><a href='evidence/S3/052_get.json'>052_get.json</a></li><li><a href='evidence/S3/053_get.json'>053_get.json</a></li><li><a href='evidence/S3/054_get.json'>054_get.json</a></li><li><a href='evidence/S3/055_get.json'>055_get.json</a></li><li><a href='evidence/S3/056_get.json'>056_get.json</a></li><li><a href='evidence/S3/057_get.json'>057_get.json</a></li><li><a href='evidence/S3/058_get.json'>058_get.json</a></li><li><a href='evidence/S3/059_get.json'>059_get.json</a></li><li><a href='evidence/S3/060_get.json'>060_get.json</a></li></ul></details></article><article id='F1'><header><div><small>F1 / Expected failure case</small><h2>Unsupported file rejected</h2></div><strong class='pass'>PASS</strong></header>
+<p>Demonstrate upload-policy enforcement without executing an unsafe file.</p><p><b>Actual scenario outcome:</b> expected rejection / 0.05s</p>
+<p><a href='inputs/F1_disallowed.exe'>Open test input</a></p><details><summary>How to demonstrate</summary><ol><li>Record the document count.</li><li>Attempt to upload a harmless test byte string with an .exe filename.</li><li>Record the real error response and verify the document count is unchanged.</li></ol></details>
+<h3>Expected result</h3><p>HTTP 400 states that the file type is not allowed. No document record is created.</p><h3>Observed result</h3><pre>{
+  &quot;http_status&quot;: 400,
+  &quot;error_response&quot;: {
+    &quot;detail&quot;: &quot;File type &#x27;.exe&#x27; not allowed. Allowed: csv, docx, jpeg, jpg, pdf, png, py, txt.&quot;
+  },
+  &quot;documents_before&quot;: 3,
+  &quot;documents_after&quot;: 3
+}</pre>
+<h3>Assertions</h3><ul><li class='pass'>PASS: Disallowed extension is rejected with HTTP 400</li><li class='pass'>PASS: Clear policy error is returned</li><li class='pass'>PASS: Rejected upload creates no document</li></ul><h3>Explanation for your mentor</h3><p>The upload operation is expected to fail. The test passes only if the application rejects it correctly. The .exe fixture is plain test text and is never executed.</p>
+<details><summary>Raw API evidence (3 responses)</summary><ul><li><a href='evidence/F1/061_get.json'>061_get.json</a></li><li><a href='evidence/F1/062_post.json'>062_post.json</a></li><li><a href='evidence/F1/063_get.json'>063_get.json</a></li></ul></details></article><article id='F2'><header><div><small>F2 / Expected failure case</small><h2>Missing source document rejected</h2></div><strong class='pass'>PASS</strong></header>
+<p>Demonstrate that analysis cannot invent a result for a nonexistent document.</p><p><b>Actual scenario outcome:</b> expected rejection / 0.04s</p>
+<p><a href='inputs/F2_missing_document_request.json'>Open test input</a></p><details><summary>How to demonstrate</summary><ol><li>Record the run count.</li><li>Submit an analysis job using nonexistent document ID 2147483647.</li><li>Record the error response and verify that no run was created.</li></ol></details>
+<h3>Expected result</h3><p>HTTP 404 states Document not found. No analysis run is created.</p><h3>Observed result</h3><pre>{
+  &quot;http_status&quot;: 404,
+  &quot;error_response&quot;: {
+    &quot;detail&quot;: &quot;Document not found&quot;
+  },
+  &quot;runs_before&quot;: 3,
+  &quot;runs_after&quot;: 3
+}</pre>
+<h3>Assertions</h3><ul><li class='pass'>PASS: Missing source is rejected with HTTP 404</li><li class='pass'>PASS: Clear missing-document error is returned</li><li class='pass'>PASS: Rejected request creates no run</li></ul><h3>Explanation for your mentor</h3><p>The analysis request is expected to fail because its source does not exist. Correct rejection is a passing negative test; a server error or fabricated result would fail the test.</p>
+<details><summary>Raw API evidence (3 responses)</summary><ul><li><a href='evidence/F2/064_get.json'>064_get.json</a></li><li><a href='evidence/F2/065_post.json'>065_post.json</a></li><li><a href='evidence/F2/066_get.json'>066_get.json</a></li></ul></details></article><section class='intro'><h2>Scope and limits</h2><p>Controlled inputs demonstrate selected functional paths. Citation scores measure literal source support, and visual descriptions remain advisory. Five cases do not establish a general accuracy percentage or certify production security. The existing application on port 8000 and its documents were not used by this isolated test process.</p><pre>{
+  &quot;python&quot;: &quot;3.14.7&quot;,
+  &quot;api_url&quot;: &quot;http://127.0.0.1:56396&quot;,
+  &quot;isolated_storage&quot;: &quot;E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-175753-3bc23f\\runtime&quot;,
+  &quot;inference&quot;: &quot;real local Ollama&quot;,
+  &quot;test_doubles&quot;: false,
+  &quot;health&quot;: {
+    &quot;status&quot;: &quot;ok&quot;,
+    &quot;mode&quot;: &quot;airgapped&quot;,
+    &quot;version&quot;: &quot;1.0.0&quot;,
+    &quot;app&quot;: &quot;KAVACH AI&quot;
+  },
+  &quot;configured_models&quot;: [
+    {
+      &quot;id&quot;: 1,
+      &quot;name&quot;: &quot;qwen3:8b&quot;,
+      &quot;provider&quot;: &quot;ollama&quot;,
+      &quot;kind&quot;: &quot;reasoning&quot;,
+      &quot;status&quot;: &quot;configured&quot;,
+      &quot;params&quot;: &quot;configured model&quot;,
+      &quot;routing_rule&quot;: &quot;General reasoning and evidence synthesis.&quot;,
+      &quot;vram_gb&quot;: 0.0
+    },
+    {
+      &quot;id&quot;: 2,
+      &quot;name&quot;: &quot;llava:7b&quot;,
+      &quot;provider&quot;: &quot;ollama&quot;,
+      &quot;kind&quot;: &quot;vision&quot;,
+      &quot;status&quot;: &quot;configured&quot;,
+      &quot;params&quot;: &quot;configured model&quot;,
+      &quot;routing_rule&quot;: &quot;P&amp;ID and image analysis.&quot;,
+      &quot;vram_gb&quot;: 0.0
+    },
+    {
+      &quot;id&quot;: 3,
+      &quot;name&quot;: &quot;llama3.2:3b&quot;,
+      &quot;provider&quot;: &quot;ollama&quot;,
+      &quot;kind&quot;: &quot;other&quot;,
+      &quot;status&quot;: &quot;configured&quot;,
+      &quot;params&quot;: &quot;configured model&quot;,
+      &quot;routing_rule&quot;: &quot;Code, classification, extraction, and planner choices.&quot;,
+      &quot;vram_gb&quot;: 0.0
+    },
+    {
+      &quot;id&quot;: 4,
+      &quot;name&quot;: &quot;nomic-embed-text:latest&quot;,
+      &quot;provider&quot;: &quot;ollama&quot;,
+      &quot;kind&quot;: &quot;embedding&quot;,
+      &quot;status&quot;: &quot;configured&quot;,
+      &quot;params&quot;: &quot;configured model&quot;,
+      &quot;routing_rule&quot;: &quot;Local knowledge-base embeddings.&quot;,
+      &quot;vram_gb&quot;: 0.0
+    }
+  ]
+}</pre></section></main></html>

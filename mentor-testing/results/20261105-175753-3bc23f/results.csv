@@ -1,0 +1,6 @@
+Case,Scenario,Planned category,Observed outcome,Test verdict,Duration ms,HTTP status,Run ID
+S1,"PDF review, citations, and human approval",success,successful,PASS,23322,,1
+S2,"PNG inspection, OCR, and literal fields",success,successful,PASS,17196,,2
+S3,Bounded planner execution,success,successful,PASS,8170,,3
+F1,Unsupported file rejected,expected_failure,expected rejection,PASS,47,400,
+F2,Missing source document rejected,expected_failure,expected rejection,PASS,42,404,

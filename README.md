@@ -1,342 +1,141 @@
-<div align="center">
+# KAVACH AI
 
-# 🛡️ KAVACH AI
+Private document analysis using local extraction, OCR, model inference, source citations, human review, and report generation.
 
-### Local-First Document Intelligence Workbench
+## Run locally
 
-**A self-hosted, air-gapped workbench that analyzes confidential documents with local AI agents, cites its evidence, and routes risky findings to human review.**
+Use Python 3.10+, Node.js 18+, and a local Ollama runtime. Install the Tesseract executable for scanned PDFs and images. Provision the configured models before requesting summaries or planner choices:
 
-</div>
-
----
-
-KAVACH AI runs entirely on your machine. You upload documents, choose a domain profile and an analysis task, and a team of small single-purpose agents reads the files, retrieves supporting passages, produces findings with source citations, verifies every quoted excerpt, and holds high-risk findings for human approval.
-
-Nothing is sent to a cloud service. Host development defaults to local [Ollama](https://ollama.com) models; a deterministic mock provider keeps the app usable without a GPU or any models installed.
-
-> **What is real vs. illustrative**
-> The agent architecture, planner loop, tool allowlist, human-approval gate, document upload, audit log, domain profiles, and Ollama integration are implemented and tested. Uploaded-text findings use profile vocabulary with source excerpts (not LLM-authored findings); summaries are model-generated and advisory; field extraction is literal. The bundled inspection scenario is a fixed, **fictional** dataset ("KAVACH DEMO REFINERY").
-
----
-
-## Contents
-
-1. [Features](#features)
-2. [Quickstart](#quickstart)
-3. [The console](#the-console)
-4. [How it works](#how-it-works)
-5. [Document profiles and analysis modes](#document-profiles-and-analysis-modes)
-6. [The agentic planner](#the-agentic-planner)
-7. [Configuration](#configuration)
-8. [API reference](#api-reference)
-9. [Project structure](#project-structure)
-10. [Security](#security)
-11. [Tests](#tests)
-12. [Limitations](#limitations)
-
----
-
-## Features
-
-- **Nine agents** — security, router, document, vision, knowledge, reasoning, verification, deliverable, and a planner, all sharing one run context and emitting a complete, auditable trace.
-- **Domain profiles** — swap the review vocabulary per document type: *General documents* or *Industrial engineering*.
-- **Analysis modes** — **Risk review** (profile-term extraction with verified source excerpts), **Summary** (model-generated, advisory; also describes images via the vision model), and **Extract fields** (literal dates, equipment IDs, and measurements with citations).
-- **Human-in-the-loop** — high-risk, low-confidence, unsupported, or unverified findings are held until a reviewer approves or rejects them.
-- **Bounded agentic planner** — the planner chooses its own next step from a fixed tool allowlist, with a step limit, loop detection, and a review gate that always runs last.
-- **Local inference routing** — reasoning, vision, and other text tasks are routed to separate local models (Ollama); the RAG index uses local embeddings.
-- **Live system metrics** — the System page reads real GPU telemetry via `nvidia-smi` and CPU/RAM via `psutil`, and clearly labels any simulated fallback.
-- **Local-only storage** — documents, the vector index, runs, and reports stay on the host filesystem and in SQLite.
-- **Audit log** — uploads, analyses, runs, searches, reviews, and downloads are recorded locally and shown in the Security Center.
-
----
-
-## Quickstart
-
-### Option A — local development (recommended)
-
-**Prerequisites:** Python 3.10+, Node 18+, and optionally [Ollama](https://ollama.com) with the models below.
-
-```bash
-ollama pull qwen3:8b          # reasoning
-ollama pull llava:7b          # vision / image description
-ollama pull llama3.2:3b       # other text tasks and planner choices
-ollama pull nomic-embed-text  # RAG embeddings
+```sh
+ollama pull qwen3:8b
+ollama pull llava:7b
+ollama pull llama3.2:3b
 ```
 
-**Backend** (from the repository root):
+From `backend/`:
 
-```bash
-cd backend
+```sh
 python -m venv .venv
-# Windows: .venv\Scripts\activate   |   macOS/Linux: source .venv/bin/activate
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
-python -m uvicorn app.main:app --port 8000     # → http://localhost:8000/docs
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-**Frontend** (second terminal):
+From `frontend/`, in a second terminal:
 
-```bash
-cd frontend
-npm install
-npm run dev                                     # → http://localhost:3000
+```sh
+npm ci
+npm run dev
 ```
 
-The backend defaults to Ollama on the host. To run fully deterministic with no models:
+Open http://localhost:3000. Upload a document in **Document Vault**, then choose a profile and analysis mode in **Workbench**. **Agent Runs** shows source excerpts, traces, and review decisions; **Deliverables** lists actual generated files. **Knowledge Base** indexes readable text from stored user documents and refreshes after changes.
 
-```bash
-# macOS/Linux
-KAVACH_INFERENCE_PROVIDER=mock python -m uvicorn app.main:app --port 8000
-# Windows PowerShell
-$env:KAVACH_INFERENCE_PROVIDER="mock"; python -m uvicorn app.main:app --port 8000
+**Highlighted evidence:** select **View highlighted source** beside a finding or a chat citation. The viewer verifies the excerpt against the current source, highlights the extracted text, and overlays available text/OCR locations on rendered PDF or image pages. Word and plain-text sources use extracted text sections. Deleted or changed sources return an explicit error; older findings without a stored document link need a new analysis.
+
+**Batch processing:** select up to 50 files in the Vault upload control. Each file has its own upload result; successful files are selected for analysis. Choose the shared profile and mode, then click **Analyze selected**. A batch feeds the existing four-slot, two-worker analysis queue and records a separate run and reports for every document. Three batches can be active at once. Progress and failures survive browser refreshes; pending items resume on backend restart, while admitted analyses interrupted by the restart are marked as errors. Sources belonging to unfinished batches cannot be deleted.
+
+**Document Chat:** open the sidebar entry, select up to 20 stored documents, and ask a question or follow-up. Retrieval is restricted to the selected documents and generation uses the configured local reasoning model. Each displayed answer paragraph must include known source markers; missing or invalid markers produce an insufficient-evidence response. Citation presence is not factual verification: review the source before acting. Chat reads extracted text, requires local OCR for scans, admits one generation at a time, and keeps conversation history only in the current browser tab. Changing sources starts a new conversation. An unavailable model produces an explicit error.
+
+To check all three features against the actual local reasoning model with isolated test documents and storage, run `python backend/scripts/verify_document_features.py`. It preserves its results under `tmp/document-features-*` and never reads the user Vault.
+
+In **Document Vault**, click a filename or **Open** to view a local PDF, image, or text preview and download the original. DOCX previews include paragraphs and tables; use the original for formatting and embedded images. **Delete** opens a confirmation before removing the uploaded source and excluding it from future knowledge searches. Existing analysis history and reports are retained. Deletion is blocked while that document has a queued or running analysis.
+
+Workbench shows an operation-driven flow while analysis runs: document checks, text/OCR extraction, planning, image handling, retrieval, reasoning, source verification, and report saving. Select a stage to inspect its real activity. When finished, full model output, source matches/fields, review controls, and downloads appear directly below the flow. Browser refreshes reconnect to the saved job rather than starting another analysis.
+
+Analysis jobs and progress are persisted in SQLite. Two local workers process up to four admitted jobs; a full queue returns HTTP 429. Run a single backend process for this local workstation setup. Normal shutdown finishes admitted jobs; an interrupted process is reported clearly after restart, and the unfinished analysis can be retried explicitly.
+
+Configuration is documented in [.env.example](.env.example). Settings are read from the process environment. To load a copied environment file, start uvicorn with `--env-file ../.env` from `backend/`. Set `NEXT_PUBLIC_API_BASE` before building the frontend.
+
+## Processing behavior
+
+- **Risk review:** matches profile vocabulary in the supplied text and verifies cited excerpts. Model reasoning is advisory; if unavailable, a warning is recorded and source-based review continues.
+- **Summary:** uses the configured local text or vision model. Failed inference returns HTTP 503 and an error run, without a substitute result.
+- **Extract fields:** extracts literal dates, amounts, contacts, owners, identifiers, and measurements with source locations.
+- **Images in every mode:** PNG/JPG/JPEG inputs always pass through the local vision model, including field extraction and planner runs. Full visual observations are saved and displayed separately from OCR-derived fields and source-term matches. Image summaries use the visual output even when OCR text exists. Zero supported OCR fields does not mean the image was not inspected; visual observations are advisory and are not assigned a source-verification score.
+- **Bounded planner:** requires a stored `document_id`, uses allowlisted tools, enforces step and loop limits, and holds risky or unsupported findings for human review. A document with no findings can finish normally.
+- **Retrieval:** `KAVACH_EMBEDDING_BACKEND=hash` computes real local lexical vectors without model dependencies. Choose `provider` to use Ollama or a configured Transformers encoder; encoder failures surface as errors. No automatic embedding backend switching occurs.
+- **Monitoring:** hardware metrics are measured locally when available. Missing readings are null/unavailable. Model assignments say configured rather than claiming a successful health probe. Sandbox readiness checks the actual local engine and runner image.
+
+New installations contain no documents, findings, runs, reports, sample charts, or sample search results. Backend outages produce explicit unavailable states. Test fixtures and provider doubles are confined to tests and evaluation code and excluded from Docker images.
+
+## Local Transformers
+
+Install `backend/requirements-transformers.txt`, set `KAVACH_INFERENCE_PROVIDER=transformers`, and point `KAVACH_TRANSFORMERS_MODEL_PATH` at a local directory containing `config.json` and safetensors weights. Remote model IDs and model downloads are disabled. For learned embeddings, also configure `KAVACH_TRANSFORMERS_EMBED_MODEL_PATH` and select the `provider` embedding backend. This adapter is text-only; image analysis requires Ollama with a vision-capable model.
+
+## Storage and existing installations
+
+Defaults are `data/uploads/`, `generated/`, and `backend/kavach.db`; all are local runtime state. Startup creates the schema and refreshes configured model assignments without loading content. The in-memory search index rebuilds from stored files after restart.
+
+For an older installation, stop its backend and preview the one-time cleanup:
+
+```sh
+python backend/scripts/remove_legacy_examples.py
+python backend/scripts/remove_legacy_examples.py --apply
 ```
 
-The frontend also runs **on its own** — with the backend offline it shows bundled sample data and disables live features.
+The script removes records and report files traceable to legacy bundled examples and preserves uploaded files. Ambiguous runs sharing source filenames with user uploads are retained for manual provenance review. Use `--database PATH` for another database. Real audit events are retained as history. Existing uploads under `demo-data/uploads/` remain accessible through their stored paths; do not delete that directory without checking its contents.
 
-### Option B — Docker
+## Docker
 
-```bash
-docker compose up --build
-# frontend → http://localhost:3000
-# backend  → http://localhost:8000/api/health
+```sh
+docker compose up --build -d
+docker compose exec inference ollama pull qwen3:8b
+docker compose exec inference ollama pull llava:7b
+docker compose exec inference ollama pull llama3.2:3b
 ```
 
-Docker Compose runs the backend with the mock provider (Ollama is not part of the compose stack), so the demo works without a GPU.
+The stack uses real Ollama inference and persistent model/data volumes. Backend and inference share a network namespace to retain the loopback provider restriction. Browser ports bind to localhost. Models must be provisioned before an offline deployment; add GPU support according to the target host. `NEXT_PUBLIC_API_BASE` defaults to `http://localhost:8000` at frontend build time.
 
----
+## Python sandbox
 
-## The console
+Open **Python Sandbox** in the sidebar to submit Python code and optional standard input. Each explicit run uses a fresh Linux container and returns real stdout, stderr, exit status, and timing. Document uploads and planner runs never execute code automatically.
 
-| Page | What it does |
-|---|---|
-| **Overview** | Data-boundary diagram, pipeline summary, bundled metrics |
-| **Workbench** | Document analysis (profile + task + source) and the sample workflow |
-| **Document Vault** | Upload, list, and analyze stored documents |
-| **Knowledge Base** | Search the local RAG index |
-| **Agent Runs** | Backend runs with traces, evidence, and approve/reject buttons |
-| **Model Router** | Configured model assignments and routing rules |
-| **Security Center** | Controls overview and the live audit log |
-| **Deliverables** | Generated reports with download links |
-| **System** | Live GPU/CPU/RAM metrics and service status |
+On Windows with an existing Ubuntu WSL distribution, provision the runtime from the repository root:
 
----
-
-## How it works
-
-```
- USER (document analysis request)
-              │
-      ┌───────▼────────┐
-      │ SECURITY AGENT │  mode + provider check
-      └───────┬────────┘
-      ┌───────▼────────┐
-      │  ROUTER AGENT  │  task type → local model
-      └───────┬────────┘
-  ┌───────────┼────────────┐
-┌─▼────────┐ ┌▼──────────┐ ┌▼───────────────┐
-│ DOCUMENT │ │  VISION   │ │   KNOWLEDGE    │
-│ extract  │ │  images   │ │  RAG retrieval │
-└─┬────────┘ └┬──────────┘ └┬───────────────┘
-  └───────────┼────────────┘
-      ┌───────▼────────┐
-      │   REASONING    │  evidence → findings
-      └───────┬────────┘
-      ┌───────▼────────┐
-      │  VERIFICATION  │  findings vs. source
-      └───────┬────────┘
-      ┌───────▼────────┐
-      │  HUMAN REVIEW  │  approve / reject
-      └───────┬────────┘
-      ┌───────▼────────┐
-      │  DELIVERABLE   │  TXT / MD / DOCX / XLSX / PDF
-      └────────────────┘
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup-sandbox.ps1 -InstallEngine
+cd backend
+python -m uvicorn app.main:app --env-file .env.sandbox --host 127.0.0.1 --port 8000
 ```
 
-- The **fixed pipeline** (`POST /api/demo/run`, `POST /api/documents/{id}/analyze`) walks this order every time.
-- The **agentic planner** (`POST /api/agent/run`) lets the planner choose which step runs next, under hard guardrails.
+`-InstallEngine` installs Docker Engine inside `Ubuntu-24.04`; choose another installed distribution with `-Distribution`. Omit the switch if the engine is already installed. The script builds the restricted runner image and writes local backend settings. After a WSL restart, start its Docker service again before using the sandbox.
 
-**Local model routing**
+With Docker Engine or Docker Desktop already available directly:
 
-| Role | Default model |
-|---|---|
-| Reasoning | `qwen3:8b` |
-| Vision | `llava:7b` |
-| Other text tasks and planner choices | `llama3.2:3b` |
-| RAG embeddings | `nomic-embed-text` |
-
-In `airgapped` mode the Ollama URL must be loopback (`localhost` / `127.0.0.1`). If a model or server is unavailable, generation falls back to the deterministic mock provider.
-
----
-
-## Document profiles and analysis modes
-
-| Profile | Intended content | Review vocabulary |
-|---|---|---|
-| **General documents** | Reports, policies, correspondence, records | Issues, delays, missing items, exceptions, risks |
-| **Industrial engineering** | Equipment integrity, maintenance, process safety | Corrosion, leaks, vibration, fouling, equipment terms |
-
-| Mode | Behavior |
-|---|---|
-| **Risk review** | Finds sentences matching the profile vocabulary and verifies every quoted excerpt against the source |
-| **Summary** | Model-generated, advisory; for images it uses the vision model to describe visible content |
-| **Extract fields** | Literal extraction of dates, equipment identifiers, and measurements, each with its source excerpt |
-
-Profiles and modes are included in the generated report. The vocabulary lives in `backend/app/domains/profiles.py` and is easy to extend.
-
----
-
-## The agentic planner
-
-`POST /api/agent/run` runs an observe → decide → act loop. The planner may only choose among eligible actions, each backed by one allowlisted tool:
-
-| Action | Eligible when |
-|---|---|
-| `inspect_document` | Documents not loaded yet |
-| `analyze_pid` | Task mentions a diagram and regions not analyzed |
-| `search_knowledge` | Nothing retrieved yet |
-| `reason` | Evidence gathered, no findings yet |
-| `verify` | Findings exist but are unverified |
-| `human_review` | Verification requires approval |
-| `finish` | Everything complete |
-
-**Guardrails** (enforced in code, covered by tests):
-
-1. Bounded steps — `max_steps` default 10, hard cap 20.
-2. Loop detection — repeating an action with identical arguments halts the run.
-3. Tool allowlist — no shell, SQL, filesystem, or network tools; unknown tools halt the run.
-4. Prerequisites cannot be skipped.
-5. The review gate always runs last, independent of the planner.
-6. Any stop other than `finish` halts the run and escalates every finding to human review.
-
----
-
-## Configuration
-
-All settings are environment-driven with safe local defaults — see [`.env.example`](.env.example).
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `KAVACH_MODE` | `airgapped` | `airgapped` blocks external providers and non-loopback URLs |
-| `KAVACH_INFERENCE_PROVIDER` | `ollama` | `ollama` or `mock` |
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Must be loopback when airgapped |
-| `OLLAMA_REASONING_MODEL` | `qwen3:8b` | Reasoning model |
-| `OLLAMA_VISION_MODEL` | `llava:7b` | Image model |
-| `OLLAMA_OTHER_MODEL` | `llama3.2:3b` | Other text tasks and planner choices |
-| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | RAG embeddings |
-| `OLLAMA_TIMEOUT_S` | `120` | Per-request Ollama timeout |
-| `KAVACH_PLANNER_MAX_STEPS` | `10` | Planner step budget (hard cap 20) |
-| `KAVACH_REVIEW_MIN_CONFIDENCE` | `75` | Findings below this need approval |
-| `KAVACH_MAX_UPLOAD_MB` | `25` | Upload size cap |
-| `KAVACH_DB` | `backend/kavach.db` | SQLite path |
-
----
-
-## API reference
-
-| Method | Path | Purpose |
-|---|---|---|
-| GET | `/api/health` | Status, mode, version |
-| GET | `/api/system/status` | Live GPU/CPU/RAM when detectable (labelled fallback), models, vector DB, sandbox, network |
-| GET | `/api/profiles` | Document profiles and analysis modes |
-| POST | `/api/documents/upload` | Upload a file (allowlist, 25 MB cap, sanitized name) |
-| GET | `/api/documents` · `/api/documents/{id}` | List / fetch documents |
-| POST | `/api/documents/{id}/analyze` | Analyze with `profile` and `analysis_mode` |
-| POST | `/api/tasks` | Create a task and run the sample pipeline |
-| POST | `/api/demo/run` · GET `/api/demo/stream` | Fixed sample scenario (and SSE stream) |
-| GET | `/api/agent/tools` | Planner tool allowlist |
-| POST | `/api/agent/run` | Bounded agentic planner run (`task`, optional `max_steps`) |
-| GET | `/api/agents/runs` · `/api/agents/runs/{id}` | Run list / full trace |
-| POST | `/api/review/{finding_id}/approve` · `/reject` | Human review decision |
-| GET | `/api/models` | Model catalogue, routing rules, providers |
-| GET | `/api/knowledge` · POST `/api/knowledge/search` | KB stats / RAG search |
-| GET | `/api/audit-logs` | Audit entries |
-| GET | `/api/deliverables` · `/api/deliverables/{id}/download` | List / download reports |
-
-Interactive docs: `http://localhost:8000/docs`.
-
----
-
-## Project structure
-
-```
-KAVACH-AI/
-├── frontend/                  Next.js console (9 sections)
-│   ├── app/                   overview, workbench, vault, knowledge, runs,
-│   │                          router, security, deliverables, system
-│   ├── components/            shell · UI primitives · visualizations
-│   └── lib/                   API client, live data layer, bundled sample data
-├── backend/
-│   ├── app/
-│   │   ├── agents/            9 agents · orchestrator · tools · review gate
-│   │   ├── domains/           general and industrial analysis profiles
-│   │   ├── models/            provider abstraction (Ollama/mock/vLLM stub) · router
-│   │   ├── rag/               chunking · embeddings · in-memory index
-│   │   ├── security/          airgap guard · upload validation · audit middleware
-│   │   ├── services/          document analysis · deliverables · system status
-│   │   ├── api/               HTTP routes
-│   │   ├── database/          SQLite layer
-│   │   └── schemas/           request/response models
-│   └── tests/                 pytest suite (49 tests)
-├── demo-data/                 fictional sample documents + generator script
-├── generated/                 sample generated reports
-├── docker/                    backend + frontend Dockerfiles
-└── docker-compose.yml
+```sh
+docker build -t kavach-sandbox:1 docker/sandbox
 ```
 
-**Tech stack:** Next.js 14 · React 18 · TypeScript · Tailwind CSS · Recharts · zustand — FastAPI · Python 3.10+ · SQLite · Ollama.
+Then start the backend normally. Docker Desktop must use Linux containers. Rootless Linux engines can be selected with `KAVACH_SANDBOX_DOCKER_HOST=unix:///run/user/UID/docker.sock`. Remote TCP/SSH engines are rejected. Set `KAVACH_SANDBOX_ENABLED=false` to disable execution explicitly.
 
----
+The fixed runner policy disables networking, exposes no host mounts or daemon socket to code, makes the root filesystem read-only, and supplies a disposable 16 MB `/tmp`. The untrusted Python worker runs as UID/GID 65534 with no effective capabilities. A small trusted supervisor uses only SETUID, SETGID, and KILL capabilities to start and terminate that worker. The container uses Docker's default seccomp policy and no-new-privileges. Default limits are one CPU, 128 MB RAM with no swap, 32 processes, 10 seconds, and 64 KB combined output. No packages are installed during execution, and images are never pulled by an execution request. Jobs clean up on success, failure, or timeout; an internal supervisor also enforces the deadline if the backend disconnects.
 
-## Security
+Sandbox endpoints accept only loopback clients and local Host headers, reject untrusted browser origins, and require an explicit execution header. The UI sends this header automatically; CLI callers must set `X-Kavach-Sandbox: execute`. Only code hashes and outcome metadata enter the audit log. Docker isolation shares its engine's Linux kernel; deploy this trusted-workstation feature on a maintained dedicated runtime. The regular Compose backend intentionally has no Docker socket mount: use the native local backend for sandbox execution rather than granting the whole web container daemon access.
 
-**Implemented**
+Run real-container tests after provisioning:
 
-- Airgapped mode (`KAVACH_MODE=airgapped`, the default) rejects external providers and non-loopback inference URLs.
-- No cloud AI SDKs; Ollama requests are loopback-restricted.
-- Upload controls: extension allowlist, 25 MB cap, path-traversal-safe filenames, no overwrites.
-- Uploaded code is never executed (the sandbox component is a stub).
-- Planner guardrails and the mandatory review gate.
-- Local audit log for uploads, analyses, runs, searches, reviews, and downloads.
+```powershell
+$env:KAVACH_RUN_SANDBOX_INTEGRATION='1'
+$env:KAVACH_SANDBOX_WSL_DISTRO='Ubuntu-24.04' # Windows WSL only
+$env:KAVACH_SANDBOX_DOCKER_HOST='unix:///var/run/docker.sock' # WSL/Linux
+cd backend
+python -m pytest tests/test_sandbox_integration.py -q
+```
 
-**Not implemented (prototype scope)**
+## Verification and deployment scope
 
-- No authentication or RBAC; the API is open to anything that can reach the port.
-- No encryption at rest.
-- The audit log is an ordinary table, not tamper-evident.
-- Docker Compose does not isolate the container network.
-- The frontend fetches fonts at build time; the running app makes no external requests.
-
----
-
-## Tests
-
-```bash
+```sh
 cd backend
 pip install -r requirements-dev.txt
-python -m pytest tests -q          # 49 tests
+python -m pytest -q
+# From frontend/:
+npx tsc --noEmit
+npm run build
 ```
 
-Coverage includes the planner loop and its guardrails, the tool allowlist, the review gate and approval flow, model routing, document profiles and modes, Ollama request formatting, knowledge search, the airgap guard, and uploaded-document analysis (extraction, verification, unreadable files, duplicate filenames).
+See [post-optimization-testing/CHECKLIST.md](post-optimization-testing/CHECKLIST.md) for manual acceptance items and [VALIDATION.md](post-optimization-testing/VALIDATION.md) for checks actually run.
 
-Frontend checks:
+For a mentor demonstration of exactly three successful workflows and two expected failure cases, run `python backend/evals/mentor.py` from the repository root. It starts a separate local API with isolated storage, uses the real local models and OCR, and exports a printable HTML report, Markdown, CSV, JSON, and raw API evidence. See [mentor-testing/README.md](mentor-testing/README.md) for the five scenarios and how to explain the difference between a failed application request and a passing negative test.
 
-```bash
-cd frontend
-npx tsc --noEmit && npm run build
-```
-
----
-
-## Limitations
-
-- **Risk review is profile-term extraction** — it can miss risks phrased without those terms, and its "confidence" is match strength, not a probability.
-- **Model output does not authoritatively create findings yet** — summaries and advisory analysis are recorded in the run trace; findings come from profile-term extraction or literal field extraction.
-- **No OCR pipeline** — images have no extracted text; use **Summary** for a vision-model description. Scanned PDFs yield no text.
-- **Sample scenario** — the bundled inspection run uses fixed fictional findings; the Workbench animation is client-side sample data.
-- **Initial profile set is intentionally small** — General and Industrial are configurable vocabularies, not comprehensive domain expertise. Multi-document comparison is not implemented.
-- Ollama model calls require the local service and listed model tags; automated tests mock those calls.
-
----
-
-<div align="center">
-<sub>KAVACH AI · Local-first document intelligence</sub>
-</div>
+This is a local, trusted-workstation application. Network-level egress blocking, authentication, transport security, disk encryption, backups, and multi-user isolation require deployment controls before wider exposure. Confidence and source verification describe extraction heuristics and citation support; they do not establish factual correctness. Workbench uses persistent background jobs; older document/task endpoints remain synchronous for API compatibility. Model summaries are advisory.

@@ -1,14 +1,11 @@
-"""Reasoning agent - synthesizes findings from documents, vision and knowledge.
-
-For the sample scenario it emits the canonical, deterministic finding set defined
-in the scenario. Uploaded documents support profile-aware risk review, summary,
-and literal field extraction.
-"""
+"""Review, summarize, and extract fields from supplied documents."""
 from __future__ import annotations
 
+from .. import config
 from ..domains.profiles import get_profile
-from ..models.providers import generate_with_fallback
-from ..services import document_analysis, scenario
+from ..models.providers import InferenceUnavailable, generate, model_for_role, active_provider_name
+from .progress import publish
+from ..services import document_analysis
 from . import review_gate
 from .base import BaseAgent, RunContext
 
@@ -21,55 +18,37 @@ class ReasoningAgent(BaseAgent):
         if uploaded:
             return self._run_document(ctx, uploaded["filename"])
 
-        # Capture a grounded model analysis. The sample-scenario findings remain the
-        # canonical fictional fixture, rather than being replaced by free-form output.
-        self._capture_analysis(ctx)
-
-        findings: list[dict] = []
-        evidence: list[dict] = []
-        for f in scenario.FINDINGS:
-            finding = {
-                "title": f["title"],
-                "description": f["description"],
-                "severity": f["severity"],
-                "confidence": f["confidence"],
-                "equipment_id": f["equipment_id"],
-                "needs_review": f["needs_review"],
-                "evidence": f["evidence"],
-            }
-            findings.append(finding)
-            for ev in f["evidence"]:
-                evidence.append({**ev, "finding_title": f["title"]})
-
-        ctx.findings = findings
-        ctx.evidence = evidence
-        ctx.add_step(self.name, "Findings generated",
-                     detail=f"Generated {len(findings)} findings with "
-                            f"{len(evidence)} evidence citations.")
-        return ctx
+        raise ValueError("A stored document is required.")
 
     def _run_document(self, ctx: RunContext, filename: str) -> RunContext:
         text = ctx.artifacts.get("document_text", "")
         profile = ctx.artifacts.get("analysis_profile", "general")
         mode = ctx.artifacts.get("analysis_mode", "risk_review")
+        source_pages = ctx.artifacts.get("document_pages")
         status = "completed"
 
         if mode == "summary":
-            if text.strip():
-                self._capture_analysis(ctx, source_text=text, mode=mode)
-            elif ctx.artifacts.get("vision_analysis"):
+            if ctx.artifacts.get("vision_analysis"):
                 self._capture_visual_summary(ctx)
+            elif text.strip():
+                self._capture_analysis(ctx, source_text=text, mode=mode)
             else:
                 status = "warning"
             findings = []
         elif mode == "extract_fields":
-            findings = document_analysis.extract_fields(text, filename)
+            findings = document_analysis.extract_fields(
+                text, filename, source_pages=source_pages)
             if not text.strip():
                 status = "warning"
         else:
             if text.strip():
-                self._capture_analysis(ctx, source_text=text, mode=mode)
-                findings = document_analysis.find_findings(text, filename, profile)
+                try:
+                    self._capture_analysis(ctx, source_text=text, mode=mode)
+                except InferenceUnavailable as exc:
+                    ctx.add_step(self.name, "Advisory model analysis unavailable", status="warning",
+                                 detail=str(exc) + " Source-term review continues.")
+                findings = document_analysis.find_findings(
+                    text, filename, profile, source_pages=source_pages)
             else:
                 findings = []
                 status = "warning"
@@ -77,6 +56,17 @@ class ReasoningAgent(BaseAgent):
         # Same approval rules as agentic runs; the cited source is the document itself.
         for f in findings:
             reasons = review_gate.review_reasons(f, {filename.lower()})
+            low_ocr_confidences = [
+                float(ev["ocr_confidence"])
+                for ev in f.get("evidence", [])
+                if ev.get("ocr_confidence") is not None
+                and float(ev["ocr_confidence"]) < config.OCR_REVIEW_MIN_CONFIDENCE
+            ]
+            if low_ocr_confidences:
+                reasons.append(
+                    f"low OCR confidence ({min(low_ocr_confidences):g}% < "
+                    f"{config.OCR_REVIEW_MIN_CONFIDENCE:g}%)"
+                )
             if reasons:
                 f["needs_review"] = 1
                 f["review_reasons"] = reasons
@@ -85,13 +75,20 @@ class ReasoningAgent(BaseAgent):
                         for f in findings for ev in f["evidence"]]
         if mode == "risk_review":
             if text.strip():
+                extraction = ctx.artifacts.get("document_extraction", {})
+                provenance = (f" Local Tesseract OCR supplied {extraction.get('ocr_pages', 0)} page(s)."
+                              if extraction.get("ocr_pages") else "")
                 detail = (f"profile={profile}; mode={mode}; matched {len(findings)} source sentences. "
-                          "Model analysis is advisory and does not override source-matched findings.")
+                          "Model analysis is advisory and does not override source-matched findings."
+                          f"{provenance}")
                 message = "Profile-based risk review completed"
             else:
                 detail = (f"{ctx.artifacts.get('document_note') or 'No text was extracted.'} "
-                          "Choose Summary for an image description or provide a text-readable document.")
-                message = "Risk review requires extracted text"
+                          "Image inspection is shown separately; source-cited risk matching requires readable OCR text."
+                          if ctx.artifacts.get("vision_analysis") else
+                          f"{ctx.artifacts.get('document_note') or 'No text was extracted.'} "
+                          "Provide a text-readable document for source-cited risk matching.")
+                message = "Image inspected; no OCR text for risk matching" if ctx.artifacts.get("vision_analysis") else "Risk review requires extracted text"
         elif mode == "summary":
             detail = (f"profile={profile}; mode={mode}; summary output is available in "
                       "the analysis trace and generated report." if ctx.artifacts.get("reasoning_analysis")
@@ -154,7 +151,10 @@ class ReasoningAgent(BaseAgent):
             f"Visual analysis: {str(vision)[:2000]}\n\n"
             "Retrieved evidence:\n" + ("\n".join(excerpts) or "(none)")
         )
-        result = generate_with_fallback(prompt, role="reasoning")
+        publish(ctx.on_progress, "reasoning", "running", "Generating local model analysis",
+                "The configured local model is processing the source and retrieved passages.",
+                model=model_for_role("reasoning"), provider=active_provider_name())
+        result = generate(prompt, role="reasoning")
         ctx.artifacts["reasoning_analysis"] = {
             "model": result.model,
             "provider": result.provider,

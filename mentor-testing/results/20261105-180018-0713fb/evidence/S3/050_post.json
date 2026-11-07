@@ -1,0 +1,27 @@
+{
+  "at": "2026-11-05T18:01:02.515907+00:00",
+  "method": "POST",
+  "path": "/api/documents/upload",
+  "request": {
+    "filename": "S3_project_record.txt",
+    "bytes": 193,
+    "sha256": "58f417d68f926d01fd57765fd6f801194cae1f23d69774aee7e62202b32528ed"
+  },
+  "http_status": 200,
+  "elapsed_ms": 38,
+  "response": {
+    "id": 3,
+    "name": "S3_project_record.txt",
+    "filename": "S3_project_record.txt",
+    "path": "E:\\miniproject\\KAVACH-AI\\mentor-testing\\results\\20261105-180018-0713fb\\runtime\\uploads\\S3_project_record.txt",
+    "doc_type": "txt",
+    "size_bytes": 193,
+    "pages": 0,
+    "extraction_method": "",
+    "ocr_pages": 0,
+    "status": "uploaded",
+    "summary": "User-uploaded txt document.",
+    "created_at": "2026-11-05T18:01:02.506605+00:00",
+    "retired_sample": 0
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "status": "not_run",
+  "executed_cases": 0,
+  "reason": "Initial input-generator attempt required optional reportlab. The generator now uses the already installed PyMuPDF instead. See a later completed session for the five results."
+}

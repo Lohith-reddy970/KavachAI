@@ -2,7 +2,7 @@
 
 Reports real local hardware metrics when they can be detected (GPU through
 ``nvidia-smi``; CPU and RAM through the import-guarded ``psutil`` package) and
-falls back to clearly labelled simulated values otherwise. All probing is local
+reports unavailable metrics as null. All probing is local
 and cached briefly so the endpoint stays fast.
 """
 from __future__ import annotations
@@ -15,7 +15,8 @@ from typing import Any
 from .. import config
 from ..database import db
 from ..rag.pipeline import backend_info
-from ..security.sandbox import MockSandboxExecutor
+from ..security import sandbox
+from . import document_analysis
 
 try:  # import-guarded: the app starts even when psutil is absent
     import psutil  # type: ignore
@@ -71,32 +72,25 @@ def _cpu_ram() -> tuple[float | None, float | None]:
         return None, None
 
 
-def _jitter(base: float, spread: float) -> float:
-    # Deterministic within a ~5s bucket; used only for labelled fallbacks.
-    bucket = int(time.time() // 5)
-    val = base + ((bucket * 2654435761) % 1000) / 1000.0 * spread - spread / 2
-    return round(max(0.0, val), 1)
-
-
 def snapshot() -> dict:
     models = db.fetch_all("SELECT name, status FROM models")
     online = sum(1 for m in models if m["status"] == "online")
-    sandbox = MockSandboxExecutor().run("print('healthcheck')")
+    ocr = document_analysis.ocr_status()
     real_gpu = _nvidia_gpu()
     cpu_pct, ram_pct = _cpu_ram()
     if real_gpu:
         gpu: dict[str, Any] = {**real_gpu, "device": real_gpu["name"], "source": "hardware"}
     else:
         gpu = {
-            "utilization_pct": _jitter(58, 20),
-            "memory_used_pct": _jitter(64, 16),
-            "temperature_c": _jitter(61, 8),
-            "device": "Simulated GPU (no local GPU metrics detected)",
-            "source": "simulated",
+            "utilization_pct": None,
+            "memory_used_pct": None,
+            "temperature_c": None,
+            "device": "GPU telemetry unavailable",
+            "source": "unavailable",
         }
     return {
         "mode": config.KAVACH_MODE,
-        "network": "airgapped (outbound blocked)" if config.IS_AIRGAPPED else "open",
+        "network": "airgapped (application provider restrictions)" if config.IS_AIRGAPPED else "open",
         "gpu": gpu,
         "cpu": {
             "utilization_pct": cpu_pct,
@@ -115,8 +109,13 @@ def snapshot() -> dict:
             "status": "online",
             "backend": backend_info()["vector_backend"],
         },
-        "ocr": {"status": "online", "engine": "mock-ocr"},
-        "sandbox": {"status": sandbox.status, "network": sandbox.network},
+        "ocr": {
+            "status": ocr["status"],
+            "engine": ocr["engine"],
+            "reason": ocr["reason"],
+            "pdf_renderer_available": ocr["pdf_renderer_available"],
+        },
+        "sandbox": sandbox.status(),
         "documents": db.count("documents"),
         "runs": db.count("agent_runs"),
     }

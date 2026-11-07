@@ -82,10 +82,12 @@ def _inspect_document(ctx: RunContext, args: dict[str, Any]) -> None:
 
 def _analyze_pid(ctx: RunContext, args: dict[str, Any]) -> None:
     VisionAgent().run(ctx)
+    ctx.artifacts["vision_checked"] = True
 
 
 def _reason(ctx: RunContext, args: dict[str, Any]) -> None:
     ReasoningAgent().run(ctx)
+    ctx.artifacts["reasoned"] = True
 
 
 def _verify(ctx: RunContext, args: dict[str, Any]) -> None:
@@ -107,9 +109,9 @@ _TOOLS: Mapping[str, ToolSpec] = MappingProxyType({
     spec.name: spec for spec in (
         ToolSpec("search_knowledge", "Search the local RAG knowledge base.",
                  _search_knowledge, _search_args),
-        ToolSpec("inspect_document", "Load and OCR the scenario document set.",
+        ToolSpec("inspect_document", "Load the selected document and its local extraction metadata.",
                  _inspect_document, _no_args),
-        ToolSpec("analyze_pid", "Detect equipment regions on the P&ID.",
+        ToolSpec("analyze_pid", "Describe a selected image using the local vision model.",
                  _analyze_pid, _no_args),
         ToolSpec("reason", "Synthesize findings from gathered evidence.",
                  _reason, _no_args),

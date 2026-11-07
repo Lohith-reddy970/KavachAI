@@ -57,7 +57,7 @@ class AuditAndAirgapMiddleware(BaseHTTPMiddleware):
         method = request.method
         actor = request.client.host if request.client else "unknown"
 
-        should_audit = method in _AUDIT_METHODS or path.startswith("/api/demo")
+        should_audit = method in _AUDIT_METHODS
         if should_audit:
             write_audit(
                 action=f"{method} {path}",
